@@ -1,0 +1,8 @@
+path: c:/Users/elkaw/Desktop/app_aforo/backend/models/test
+train: images
+val: images
+test: images
+
+# Classes
+names:
+  0: person

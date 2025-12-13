@@ -1,0 +1,6 @@
+# Directorio para modelos YOLO entrenados
+# Coloca aquí tus archivos .pt:
+# - yolov8n.pt (obligatorio)
+# - yolov8s.pt (opcional)
+# - yolov8m.pt (opcional)
+# - yolov8l.pt (opcional)

@@ -1,0 +1,22 @@
+# Ignorar dependencias y builds
+node_modules/
+.expo/
+dist/
+web-build/
+build/
+
+# Ignorar archivos de sistema y git
+.git/
+.gitignore
+.DS_Store
+
+# Ignorar archivos grandes o innecesarios
+*.apk
+*.aab
+*.tar.gz
+*.zip
+
+# Ignorar documentación y archivos del backend si estuvieran copiados por error
+backend/
+docs/
+*.md

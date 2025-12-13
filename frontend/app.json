@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Aforo App",
+    "slug": "aforo-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#3b82f6"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aforo.app"
+    },
+    "android": {
+      "package": "com.aforo.app",
+      "permissions": [
+        "INTERNET"
+      ]
+    },
+    "web": {},
+    "sdkVersion": "54.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "ab0c8a17-3eae-46be-89fb-12746902689a"
+      }
+    }
+  }
+}

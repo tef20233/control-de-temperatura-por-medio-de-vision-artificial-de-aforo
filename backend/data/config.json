@@ -1,0 +1,22 @@
+{
+  "max_capacity": 10,
+  "ensemble_strategy": "best",
+  "confidence_threshold": 0.4,
+  "enable_privacy": false,
+  "enable_fisheye": true,
+  "fisheye_strength": 1e-05,
+  "skip_frames": 0,
+  "performance_mode": "balanced",
+  "imgsz": 512,
+  "iou_threshold": 0.5,
+  "max_detections": 100,
+  "camera_source": 0,
+  "camera_type": "webcam",
+  "camera_alternative_ips": [
+    "http://localhost:5001",
+    "http://127.0.0.1:5001",
+    "http://192.168.222.224:5001",
+    "http://192.168.1.100:5001",
+    "http://192.168.196.100:5001"
+  ]
+}

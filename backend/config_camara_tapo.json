@@ -1,0 +1,27 @@
+{
+  "camara_info": {
+    "dispositivo": "admin",
+    "mac_id": "78-20-51-1E-3B-0E",
+    "modelo": "Tapo Camera",
+    "descripcion": "Cámara Tapo para control de aforo"
+  },
+  "cuenta_tapo": {
+    "email": "julianmonj45@gmail.com",
+    "usuario": "julianmonj45",
+    "nota": "Credenciales de la cuenta Tapo Cloud"
+  },
+  "configuracion_futura": {
+    "nota": "Esta configuración se usará cuando se integre la cámara Tapo",
+    "pasos_pendientes": [
+      "1. Encontrar la IP local de la cámara en la red",
+      "2. Configurar el stream HTTP/RTSP",
+      "3. Actualizar backend/app.py con la IP correcta",
+      "4. Probar conexión con test_camera_network.py"
+    ]
+  },
+  "referencia": {
+    "archivo_configuracion_actual": "CONFIGURACION_CAMARA_TAPO.md",
+    "script_prueba": "backend/test_camera_network.py",
+    "adaptador": "backend/core/tapo_camera_adapter.py"
+  }
+}

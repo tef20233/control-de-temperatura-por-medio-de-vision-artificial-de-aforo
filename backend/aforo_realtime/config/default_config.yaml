@@ -1,0 +1,86 @@
+presets:
+  ultra_fast:
+    name: "Ultra Rápido ⚡"
+    description: "Máxima velocidad, para demos y hardware limitado"
+    imgsz: 384
+    conf_threshold: 0.5
+    iou_threshold: 0.6
+    half: true
+    max_det: 50
+    target_fps: 80
+    expected_fps_gtx1050ti: "70-90"
+    expected_accuracy: "~96%"
+    use_case: "Demos, prototipado rápido, edge devices"
+
+  fast:
+    name: "Rápido (Optimizado GTX 1060) 🚀"
+    description: "Configuración ganadora para GTX 1060 (yolo11s)"
+    imgsz: 512
+    conf_threshold: 0.35
+    iou_threshold: 0.50
+    half: true
+    max_det: 100
+    target_fps: 60
+    expected_fps_gtx1050ti: "50-65"
+    expected_accuracy: "High (mAP 0.50+)"
+    use_case: "Producción en GTX 1060"
+
+  balanced:
+    name: "Balanceado ⚖️"
+    description: "Configuración por defecto, mejor balance general"
+    imgsz: 512
+    conf_threshold: 0.4
+    iou_threshold: 0.5
+    half: true
+    max_det: 150
+    target_fps: 50
+    expected_fps_gtx1050ti: "40-55"
+    expected_accuracy: "~98%"
+    use_case: "Uso general, recomendado"
+
+  quality:
+    name: "Alta Calidad 🎯"
+    description: "Máxima precisión, análisis detallado"
+    imgsz: 640
+    conf_threshold: 0.35
+    iou_threshold: 0.45
+    half: true
+    max_det: 300
+    target_fps: 35
+    expected_fps_gtx1050ti: "30-45"
+    expected_accuracy: "99%+"
+    use_case: "Análisis detallado, máxima precisión"
+
+visualization:
+  bbox_thickness: 2
+  font_scale: 1.0
+  show_confidence: true
+  show_fps: true
+  show_statistics: true
+  fps_bar: true
+
+  colors:
+    high_conf: [0, 255, 0]
+    medium_conf: [0, 255, 255]
+    low_conf: [0, 0, 255]
+
+logging:
+  enabled: true
+  format: "both"
+  output_dir: "outputs/logs"
+
+privacy:
+  blur_method: "gaussian"
+  blur_intensity: 99
+  face_detection_method: "cascade"
+
+save:
+  output_dir: "outputs/videos"
+  codec: "mp4v"
+  fps_match_processing: true
+
+screenshots:
+  output_dir: "outputs/screenshots"
+
+history:
+  max_length: 100
