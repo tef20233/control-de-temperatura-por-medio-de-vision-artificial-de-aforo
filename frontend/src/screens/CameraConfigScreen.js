@@ -48,35 +48,6 @@ export default function CameraConfigScreen({ onBack }) {
     }
   };
 
-  const testCamera = async (url) => {
-    try {
-      setLoading(true);
-      const response = await axios.post(`${API_BASE_URL}/api/camera/test`, {
-        camera_url: url,
-        timeout: 5,
-      });
-
-      if (response.data.success) {
-        Alert.alert('✅ Conexión Exitosa', 'La cámara está accesible');
-        return true;
-      } else {
-        Alert.alert('❌ Conexión Fallida', response.data.error || 'No se pudo conectar');
-        return false;
-      }
-    } catch (error) {
-      let errorMsg = 'No se pudo probar la conexión';
-      if (error.response) {
-        errorMsg = error.response.data.error || errorMsg;
-      } else if (error.message.includes('Network Error')) {
-        errorMsg = 'Error de red. Verifica que el backend esté ejecutándose.';
-      }
-      Alert.alert('❌ Error', errorMsg);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const scanNetwork = async () => {
     try {
       setScanning(true);

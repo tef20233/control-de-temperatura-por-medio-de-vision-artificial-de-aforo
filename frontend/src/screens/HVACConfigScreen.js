@@ -7,7 +7,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  TextInput,
   Switch,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
