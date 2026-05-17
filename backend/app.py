@@ -1570,7 +1570,16 @@ def process_video_stream():
                 'camera_fps': round(system_state.get('camera_fps', 30), 1),
                 'inference_time': round(inference_time, 3),
                 'frame_number': frame_count,
-                'occupancy_level': system_state.get('occupancy_level', 'Desconocido')
+                'occupancy_level': system_state.get('occupancy_level', 'Desconocido'),
+                'hvac': {
+                    'target_temp': hvac_decision.get('target_temperature_c', None),
+                    'mode': hvac_decision.get('mode', 'cool'),
+                    'fan': hvac_decision.get('fan_speed', 'auto'),
+                    'power': hvac_decision.get('recommended_power', False),
+                    'should_dispatch': hvac_decision.get('should_dispatch', False),
+                    'reason': hvac_decision.get('reason', ''),
+                    'serial_connected': not arduino_bridge.simulation_mode,
+                } if hvac_decision else None
             }
             
             # Guardar frame actual en estado (para HTTP polling y streams)

@@ -426,6 +426,53 @@ export default function HomeScreenSimple() {
         <Text style={styles.percentageText}>Capacidad Utilizada: {percentage.toFixed(0)}%</Text>
       </View>
  
+      {/* HVAC Climate Card - Real-time */}
+      <View style={styles.hvacCard}>
+        <Text style={styles.cardTitle}>CLIMATIZACIÓN AUTOMÁTICA</Text>
+        <View style={styles.hvacGrid}>
+          <View style={styles.hvacMetric}>
+            <Text style={styles.hvacTempValue}>
+              {frameData?.hvac?.target_temp != null
+                ? `${Math.round(frameData.hvac.target_temp)}°`
+                : '--°'}
+            </Text>
+            <Text style={styles.hvacMetricLabel}>Temp. Objetivo</Text>
+          </View>
+          <View style={styles.hvacMetric}>
+            <Text style={styles.hvacModeValue}>
+              {frameData?.hvac?.mode === 'cool' ? '❄️' : frameData?.hvac?.mode === 'heat' ? '🔥' : '🌀'}
+            </Text>
+            <Text style={styles.hvacMetricLabel}>
+              {frameData?.hvac?.mode === 'cool' ? 'Frío' : frameData?.hvac?.mode === 'heat' ? 'Calor' : 'Auto'}
+            </Text>
+          </View>
+          <View style={styles.hvacMetric}>
+            <Text style={styles.hvacModeValue}>
+              {frameData?.hvac?.fan === 'auto' ? '🔄' : frameData?.hvac?.fan === 'high' ? '💨' : '🍃'}
+            </Text>
+            <Text style={styles.hvacMetricLabel}>
+              Fan: {(frameData?.hvac?.fan || 'auto').toUpperCase()}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.hvacStatusRow}>
+          <View style={[styles.hvacChip, { backgroundColor: frameData?.hvac?.power ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 45, 85, 0.15)' }]}>
+            <Text style={[styles.hvacChipText, { color: frameData?.hvac?.power ? '#00E676' : '#FF2D55' }]}>
+              {frameData?.hvac?.power ? '⚡ ENCENDIDO' : '⏸ APAGADO'}
+            </Text>
+          </View>
+          <View style={[styles.hvacChip, { backgroundColor: frameData?.hvac?.serial_connected ? 'rgba(0, 229, 255, 0.15)' : 'rgba(100, 116, 139, 0.15)' }]}>
+            <Text style={[styles.hvacChipText, { color: frameData?.hvac?.serial_connected ? '#00E5FF' : '#64748B' }]}>
+              {frameData?.hvac?.serial_connected ? '🔌 Arduino Real' : '📡 Simulación'}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.hvacOccupancyInfo}>
+          Nivel de ocupación: {frameData?.occupancy_level || 'Esperando datos...'}
+          {frameData?.hvac?.should_dispatch ? '  •  Comando IR enviado ✅' : ''}
+        </Text>
+      </View>
+
       {/* Metrics Grid */}
       <View style={styles.metricsGrid}>
         <View style={styles.metricCard}>
@@ -945,5 +992,70 @@ const styles = StyleSheet.create({
   },
   radarCenterIcon: {
     fontSize: 20,
+  },
+  hvacCard: {
+    backgroundColor: '#101726',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 22,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#7C4DFF',
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  hvacGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  hvacMetric: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  hvacTempValue: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#7C4DFF',
+    textShadowColor: 'rgba(124, 77, 255, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+  },
+  hvacModeValue: {
+    fontSize: 28,
+  },
+  hvacMetricLabel: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: 'bold',
+    marginTop: 4,
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  hvacStatusRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  hvacChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  hvacChipText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  hvacOccupancyInfo: {
+    fontSize: 11,
+    color: '#94A3B8',
+    textAlign: 'center',
+    letterSpacing: 0.3,
   },
 });
