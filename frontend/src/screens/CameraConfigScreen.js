@@ -236,46 +236,50 @@ export default function CameraConfigScreen({ onBack }) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>ENLACES RÁPIDOS DE VIDEO</Text>
 
-        <TouchableOpacity
-          style={styles.optionButton}
-          onPress={() => {
-            setCameraSource('0');
-            setCameraType('webcam');
-          }}
-        >
-          <Text style={styles.optionIcon}>💻</Text>
-          <View style={styles.optionTextContainer}>
-            <Text style={styles.optionTitle}>Webcam de Computadora</Text>
-            <Text style={styles.optionSubtitle}>Cámara física directa de la PC principal</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.gridRow}>
+          <TouchableOpacity
+            style={[styles.gridItem, { borderColor: '#7C4DFF' }]}
+            onPress={() => {
+              setCameraSource('0');
+              setCameraType('webcam');
+            }}
+          >
+            <View style={[styles.gridIconCircle, { backgroundColor: 'rgba(124, 77, 255, 0.15)', borderColor: '#7C4DFF' }]}>
+              <Text style={styles.gridIcon}>💻</Text>
+            </View>
+            <Text style={styles.gridTitle}>Webcam de PC</Text>
+            <Text style={styles.gridSubtitle}>Cámara física directa de la PC</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.gridItem, { borderColor: '#00E5FF' }]}
+            onPress={usePhoneCamera}
+          >
+            <View style={[styles.gridIconCircle, { backgroundColor: 'rgba(0, 229, 255, 0.15)', borderColor: '#00E5FF' }]}>
+              <Text style={styles.gridIcon}>📱</Text>
+            </View>
+            <Text style={styles.gridTitle}>Cámara Celular</Text>
+            <Text style={styles.gridSubtitle}>Usar smartphone como sensor</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
-          style={styles.optionButton}
-          onPress={usePhoneCamera}
-        >
-          <Text style={styles.optionIcon}>📱</Text>
-          <View style={styles.optionTextContainer}>
-            <Text style={styles.optionTitle}>Cámara de este Celular</Text>
-            <Text style={styles.optionSubtitle}>Usar la cámara de tu smartphone como feed</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.optionButton}
+          style={[styles.scanFullCard, scanning && styles.scanningActive]}
           onPress={scanNetwork}
           disabled={scanning}
         >
-          <Text style={styles.optionIcon}>🔍</Text>
-          <View style={styles.optionTextContainer}>
-            <Text style={styles.optionTitle}>
-              {scanning ? 'Escaneando subred...' : 'Escanear Red Local'}
-            </Text>
-            <Text style={styles.optionSubtitle}>
-              Buscar cámaras IP conectadas a tu WiFi
-            </Text>
+          <View style={styles.scanHeader}>
+            <Text style={styles.scanIcon}>{scanning ? '📡' : '🔍'}</Text>
+            <View style={{ flex: 1, marginLeft: 15 }}>
+              <Text style={styles.scanTitle}>
+                {scanning ? 'Escaneando subred local...' : 'Escanear Red WiFi Local'}
+              </Text>
+              <Text style={styles.scanSubtitle}>
+                {scanning ? 'Buscando puertos activos en la red...' : 'Localizar cámaras IP automáticas en tu red'}
+              </Text>
+            </View>
+            {scanning && <ActivityIndicator color="#00E676" style={{ marginLeft: 10 }} />}
           </View>
-          {scanning && <ActivityIndicator color="#00E5FF" />}
         </TouchableOpacity>
       </View>
 
@@ -289,7 +293,7 @@ export default function CameraConfigScreen({ onBack }) {
               style={styles.resultItem}
               onPress={() => {
                 setCameraSource(camera.url);
-                setCameraType('tapo');
+                setCameraType('auto');
               }}
             >
               <Text style={styles.resultIcon}>📹</Text>
@@ -313,13 +317,13 @@ export default function CameraConfigScreen({ onBack }) {
           style={styles.input}
           value={cameraSource}
           onChangeText={setCameraSource}
-          placeholder="0 (Webcam) | rtsp://... | http://..."
+          placeholder="0 (Webcam) | http://..."
           placeholderTextColor="#64748B"
         />
 
         <Text style={styles.label}>Tipo de Decodificador</Text>
         <View style={styles.typeSelector}>
-          {['auto', 'webcam', 'rtsp', 'tapo', 'mjpeg'].map((type) => (
+          {['auto', 'webcam'].map((type) => (
             <TouchableOpacity
               key={type}
               style={[
@@ -351,18 +355,6 @@ export default function CameraConfigScreen({ onBack }) {
         />
 
         <TouchableOpacity
-          style={[styles.testButton, (!cameraSource || !cameraSource.startsWith('http')) && styles.disabledButton]}
-          onPress={() => testCamera(cameraSource)}
-          disabled={loading || !cameraSource || !cameraSource.startsWith('http')}
-        >
-          {loading ? (
-            <ActivityIndicator color="#080C14" />
-          ) : (
-            <Text style={styles.buttonTextDark}>🔍 PROBAR CONEXIÓN DE RED</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={styles.applyButton}
           onPress={saveMaxCapacity}
           disabled={loading}
@@ -385,21 +377,6 @@ export default function CameraConfigScreen({ onBack }) {
             <Text style={styles.buttonTextDark}>✅ APLICAR NUEVA CÁMARA</Text>
           )}
         </TouchableOpacity>
-      </View>
-
-      {/* Examples */}
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>💡 Sintaxis de Fuentes de Video</Text>
-        <Text style={styles.exampleText}>• Webcam Local: <Text style={{ color: '#00E5FF', fontWeight: 'bold' }}>0</Text></Text>
-        <Text style={styles.exampleText}>
-          • Stream Móvil (IP Webcam): <Text style={{ color: '#00E5FF' }}>http://192.168.1.X:8080/video</Text>
-        </Text>
-        <Text style={styles.exampleText}>
-          • Flujo de Seguridad RTSP: <Text style={{ color: '#00E5FF' }}>rtsp://admin:pass@192.168.1.X:554/stream</Text>
-        </Text>
-        <Text style={styles.exampleText}>
-          • Cámara Tapo: <Text style={{ color: '#00E5FF' }}>http://192.168.1.X:5001</Text>
-        </Text>
       </View>
 
       {/* Instructions for Phone Camera */}
@@ -488,30 +465,74 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
-  optionButton: {
+  gridRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 15,
+  },
+  gridItem: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  gridIconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  gridIcon: {
+    fontSize: 22,
+  },
+  gridTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  gridSubtitle: {
+    fontSize: 9,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 12,
+  },
+  scanFullCard: {
+    backgroundColor: '#0F172A',
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#00E676',
+    shadowColor: '#00E676',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  scanningActive: {
+    borderColor: '#FFD600',
+    shadowColor: '#FFD600',
+  },
+  scanHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#1F2942',
   },
-  optionIcon: {
-    fontSize: 28,
-    marginRight: 15,
+  scanIcon: {
+    fontSize: 26,
   },
-  optionTextContainer: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 15,
+  scanTitle: {
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-  optionSubtitle: {
-    fontSize: 11,
+  scanSubtitle: {
+    fontSize: 10,
     color: '#64748B',
     marginTop: 2,
   },
@@ -585,18 +606,6 @@ const styles = StyleSheet.create({
   typeButtonTextActive: {
     color: '#080C14',
   },
-  testButton: {
-    backgroundColor: '#7C4DFF',
-    padding: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginTop: 18,
-    shadowColor: '#7C4DFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 3,
-  },
   applyButton: {
     backgroundColor: '#00E5FF',
     padding: 16,
@@ -634,12 +643,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     letterSpacing: 0.5,
   },
-  exampleText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginVertical: 4,
-    lineHeight: 20,
-  },
   instructionText: {
     fontSize: 12,
     color: '#94A3B8',
@@ -647,4 +650,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
+
 
