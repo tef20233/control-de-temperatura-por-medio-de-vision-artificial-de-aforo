@@ -220,6 +220,25 @@ export default function HomeScreenSimple() {
     }
   };
 
+  const toggleSimulation = async () => {
+    try {
+      const baseUrl = backendUrl || API_BASE_URL;
+      const isSimulated = frameData?.hvac?.serial_connected === false;
+      const response = await axios.post(`${baseUrl}/api/hvac/serial/simulation`, {
+        simulation_mode: !isSimulated
+      });
+      
+      if (response.data.success) {
+        Alert.alert('✅ Modo Cambiado', `Arduino ahora en Modo ${!isSimulated ? 'Simulación' : 'Real'}`);
+      } else {
+        Alert.alert('⚠️ Aviso', response.data.error || 'No se pudo conectar al Arduino real, forzando simulación.');
+      }
+      checkConnection();
+    } catch (error) {
+      Alert.alert('❌ Error', 'No se pudo cambiar el modo de simulación');
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -428,10 +447,15 @@ export default function HomeScreenSimple() {
  
       {/* Premium HVAC Climate Card - Real-time */}
       <View style={styles.hvacPremiumCard}>
-        <View style={styles.hvacPremiumHeader}>
+        <TouchableOpacity style={styles.hvacPremiumHeader} onPress={toggleSimulation}>
           <Text style={styles.hvacPremiumTitle}>⚡ CLIMATIZACIÓN AUTOMÁTICA</Text>
-          <View style={[styles.hvacStatusDot, { backgroundColor: frameData?.hvac?.serial_connected ? '#00E5FF' : '#64748B' }]} />
-        </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={{ color: frameData?.hvac?.serial_connected ? '#00E5FF' : '#64748B', fontSize: 10, fontWeight: 'bold' }}>
+              {frameData?.hvac?.serial_connected ? 'REAL' : 'SIM'}
+            </Text>
+            <View style={[styles.hvacStatusDot, { backgroundColor: frameData?.hvac?.serial_connected ? '#00E5FF' : '#64748B' }]} />
+          </View>
+        </TouchableOpacity>
 
         <View style={styles.hvacPremiumGrid}>
           {/* Temperature */}

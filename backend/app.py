@@ -1326,6 +1326,27 @@ def disconnect_serial():
     result = arduino_bridge.disconnect()
     return jsonify(result)
 
+@app.route('/api/hvac/serial/simulation', methods=['POST'])
+def toggle_simulation_mode():
+    """Alternar el modo simulación del Arduino"""
+    data = request.json or {}
+    enable_simulation = data.get('simulation_mode', True)
+    
+    # Actualizar configuración global
+    config['hvac_serial']['simulation_mode'] = enable_simulation
+    arduino_bridge.configure(config['hvac_serial'])
+    
+    # Si quitamos simulación, intentamos conectar al puerto real
+    if not enable_simulation:
+        result = arduino_bridge.connect()
+        return jsonify(result)
+    else:
+        # Si activamos simulación, desconectamos el puerto real (si existía)
+        arduino_bridge.disconnect()
+        # Y forzamos el estado a simulación
+        result = arduino_bridge.connect()
+        return jsonify(result)
+
 @app.route('/api/hvac/command', methods=['POST'])
 def send_hvac_command():
     """Enviar un comando manual al HVAC"""
