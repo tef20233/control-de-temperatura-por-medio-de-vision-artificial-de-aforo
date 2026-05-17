@@ -1,22 +1,49 @@
 {
-  "max_capacity": 10,
+  "max_capacity": 50,
   "ensemble_strategy": "best",
-  "confidence_threshold": 0.4,
+  "confidence_threshold": 0.45,
   "enable_privacy": false,
-  "enable_fisheye": true,
-  "fisheye_strength": 1e-05,
-  "skip_frames": 0,
-  "performance_mode": "balanced",
-  "imgsz": 512,
-  "iou_threshold": 0.5,
-  "max_detections": 100,
+  "enable_fisheye": false,
+  "fisheye_strength": 0.0,
+  "skip_frames": 1,
+  "performance_mode": "fast",
+  "imgsz": 416,
+  "iou_threshold": 0.6,
+  "max_detections": 50,
   "camera_source": 0,
   "camera_type": "webcam",
   "camera_alternative_ips": [
     "http://localhost:5001",
-    "http://127.0.0.1:5001",
-    "http://192.168.222.224:5001",
-    "http://192.168.1.100:5001",
-    "http://192.168.196.100:5001"
-  ]
+    "http://192.168.1.4:4747/video"
+  ],
+  "occupancy_thresholds": {
+    "low": {
+      "max_people": 5,
+      "max_occupancy_pct": 0.2
+    },
+    "medium": {
+      "max_people": 15,
+      "max_occupancy_pct": 0.6
+    }
+  },
+  "hvac": {
+    "enabled": true,
+    "control_mode": "auto",
+    "brand": "lg",
+    "mode": "cool",
+    "fan_speed": "auto",
+    "temperature": {
+      "vacant_c": 26.0,
+      "occupied_min_c": 22.0,
+      "minimum_c": 18.0,
+      "maximum_c": 30.0
+    }
+  },
+  "hvac_serial": {
+    "enabled": true,
+    "port": "COM6",
+    "baudrate": 115200,
+    "simulation_mode": false,
+    "auto_connect": true
+  }
 }
