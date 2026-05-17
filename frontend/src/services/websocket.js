@@ -93,27 +93,16 @@ class WebSocketService {
 
     // Escuchar actualizaciones de frames con throttling
     this.socket.on('frame_update', (data) => {
-      // Skip frames si aún estamos procesando el anterior
-      if (this.isProcessingFrame) {
-        return;
-      }
-
       const now = Date.now();
       const timeSinceLastFrame = now - this.lastFrameTime;
 
-      // Throttle a 30 FPS (33ms por frame)
-      if (timeSinceLastFrame < 33) {
+      // Throttle a 25 FPS (~40ms por frame) para estabilidad en móviles
+      if (timeSinceLastFrame < 40) {
         return;
       }
 
-      this.isProcessingFrame = true;
       this.lastFrameTime = now;
-
-      // Procesar frame de forma asíncrona
-      requestAnimationFrame(() => {
-        this.emit('frame_update', data);
-        this.isProcessingFrame = false;
-      });
+      this.emit('frame_update', data);
     });
   }
 

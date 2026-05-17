@@ -12,6 +12,7 @@ python-socketio>=5.10.0
 setuptools>=65.0.0
 eventlet>=0.33.0
 requests>=2.31.0
+pyserial>=3.5
 
 # Nota: gunicorn y gevent no son compatibles con Windows
 # eventlet funciona en Windows y soluciona problemas de WebSocket

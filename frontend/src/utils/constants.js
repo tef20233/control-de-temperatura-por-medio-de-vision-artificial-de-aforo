@@ -2,19 +2,15 @@
 export const API_CONFIG = {
   // URLs de backend a intentar (orden de prioridad)
   BACKEND_URLS: [
-    'http://192.168.20.45:5000',      // IP ACTUAL (Detectada)
+    'http://192.168.18.5:5000',      // IP ACTUAL (Detectada)
+    'http://10.0.2.2:5000',           // Android Emulator Host
     'http://localhost:5000',           // Localhost (misma máquina)
     'http://127.0.0.1:5000',          // IPv4 loopback
-    'http://192.168.199.183:5000',    // IP anterior
-    'http://192.168.218.31:5000',     // IP alternativa
-    'http://192.168.1.6:5000',        // IP alternativa
-    'http://192.168.1.19:5000',       // IP alternativa
-    'http://192.168.196.100:5000',    // Otra red posible
   ],
 
   // URL actual en uso (se establece dinámicamente)
-  BASE_URL: 'http://localhost:5000',
-  WS_URL: 'ws://localhost:5000',
+  BASE_URL: 'http://192.168.18.5:5000',
+  WS_URL: 'ws://192.168.18.5:5000',
 
   TIMEOUT: 10000, // 10 segundos (aumentado para conexiones más lentas)
   RETRY_INTERVAL: 3000, // Reintentar cada 3 segundos
@@ -26,7 +22,7 @@ export const detectBackend = async () => {
   for (const url of API_CONFIG.BACKEND_URLS) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // Timeout más agresivo para detección rápida
 
       const response = await fetch(`${url}/api/status`, {
         method: 'GET',

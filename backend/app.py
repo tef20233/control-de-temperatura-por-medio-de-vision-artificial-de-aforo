@@ -43,6 +43,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'aforo_realtime'))
 from src.detector import RealtimeDetector
 from core.camera import CameraManager
 from core.tracker import LineCrossingTracker
+from core.hvac_controller import OccupancyBasedHVACController
+from core.arduino_serial import ArduinoSerialBridge
 from utils.metrics import MetricsCollector
 import json
 import time
@@ -125,6 +127,8 @@ detector = RealtimeDetector(
     max_det_override=100
 )
 people_tracker = LineCrossingTracker(max_lost=20, iou_threshold=0.2)
+hvac_controller = OccupancyBasedHVACController()
+arduino_bridge = ArduinoSerialBridge()
 
 # Configuración global ADAPTADA para GTX 1050 Ti (con modelo yolo11s)
 config = {
@@ -150,8 +154,28 @@ config = {
     # Clasificación de ocupación (Editable)
     'occupancy_thresholds': {
         'low': {'max_people': 5, 'max_occupancy_pct': 0.20},
-        'medium': {'max_people': 15, 'max_occupancy_pct': 0.60},
-        # High es todo lo que supere medium
+        'medium': {'max_people': 15, 'max_occupancy_pct': 0.60}
+    },
+    # Configuración HVAC
+    'hvac': {
+        'enabled': True,
+        'control_mode': 'auto',
+        'brand': 'lg',
+        'mode': 'cool',
+        'fan_speed': 'auto',
+        'temperature': {
+            'vacant_c': 26.0,
+            'occupied_min_c': 22.0,
+            'minimum_c': 18.0,
+            'maximum_c': 30.0
+        }
+    },
+    'hvac_serial': {
+        'enabled': True,
+        'port': 'COM6',
+        'baudrate': 115200,
+        'simulation_mode': False,
+        'auto_connect': True
     }
 }
 
@@ -212,6 +236,14 @@ camera = CameraManager(
     camera_type=config['camera_type']
 )
 metrics = MetricsCollector()
+
+# Configurar controladores de HVAC y Arduino con los valores por defecto al iniciar
+hvac_controller.configure(config['hvac'])
+arduino_bridge.configure(config['hvac_serial'])
+if config['hvac_serial'].get('enabled') and not config['hvac_serial'].get('simulation_mode'):
+    print("🔌 Conectando físicamente al Arduino en COM6...")
+    connection_res = arduino_bridge.connect()
+    print("🔌 Estado de conexión al Arduino:", connection_res)
 
 # Estado del sistema
 system_state = {
@@ -1241,6 +1273,104 @@ def get_camera_stats():
         })
 
 
+# ==================== HVAC API ====================
+
+@app.route('/api/hvac/status', methods=['GET'])
+def get_hvac_status():
+    """
+    Estado del sistema HVAC
+    ---
+    tags:
+      - HVAC
+    responses:
+      200:
+        description: Estado actual del controlador HVAC y puente serial
+    """
+    hvac_status = hvac_controller.get_status()
+    serial_status = arduino_bridge.get_status()
+    
+    return jsonify({
+        'hvac': hvac_status,
+        'serial': serial_status,
+        'config': config['hvac']
+    })
+
+@app.route('/api/hvac/brands', methods=['GET'])
+def get_hvac_brands():
+    """Obtener marcas de aire acondicionado soportadas"""
+    return jsonify(hvac_controller.get_supported_brands())
+
+@app.route('/api/hvac/serial/ports', methods=['GET'])
+def get_serial_ports():
+    """Listar puertos seriales disponibles"""
+    return jsonify(arduino_bridge.available_ports())
+
+@app.route('/api/hvac/serial/connect', methods=['POST'])
+def connect_serial():
+    """Conectar al puerto serial del Arduino"""
+    data = request.json or {}
+    port = data.get('port')
+    baudrate = data.get('baudrate', 115200)
+    
+    if port:
+        config['hvac_serial']['port'] = port
+        config['hvac_serial']['baudrate'] = baudrate
+        arduino_bridge.configure(config['hvac_serial'])
+        
+    result = arduino_bridge.connect()
+    return jsonify(result)
+
+@app.route('/api/hvac/serial/disconnect', methods=['POST'])
+def disconnect_serial():
+    """Desconectar del puerto serial"""
+    result = arduino_bridge.disconnect()
+    return jsonify(result)
+
+@app.route('/api/hvac/command', methods=['POST'])
+def send_hvac_command():
+    """Enviar un comando manual al HVAC"""
+    data = request.json or {}
+    
+    # Construir comando manual
+    command = hvac_controller.build_command(
+        decision={}, # No hay decisión automática
+        source='manual',
+        overrides=data
+    )
+    
+    # Generar payload para Arduino
+    serial_payload = hvac_controller.build_serial_payload(command)
+    
+    # Enviar vía serial
+    result = arduino_bridge.send_payload(serial_payload)
+    
+    if result.get('success'):
+        hvac_controller.register_dispatch(command, result)
+        
+    return jsonify({
+        'command': command,
+        'result': result
+    })
+
+@app.route('/api/hvac/config', methods=['POST'])
+def update_hvac_config():
+    """Actualizar configuración del controlador HVAC"""
+    data = request.json or {}
+    
+    # Actualizar diccionarios anidados si existen
+    if 'temperature' in data and isinstance(data['temperature'], dict):
+        config['hvac']['temperature'].update(data['temperature'])
+        del data['temperature']
+        
+    config['hvac'].update(data)
+    hvac_controller.configure(config['hvac'])
+    
+    return jsonify({
+        'success': True,
+        'config': config['hvac']
+    })
+
+
 # ==================== WEBSOCKET ====================
 
 def process_video_stream():
@@ -1248,20 +1378,27 @@ def process_video_stream():
     Loop principal que procesa video y envía por WebSocket
     Se ejecuta en background mientras system_state['running'] == True
     """
-    print("🎬 Iniciando loop de procesamiento de video...")
+    import uuid
+    global system_state
+    
+    # Generar un ID de hilo único y marcarlo como el activo
+    my_thread_id = str(uuid.uuid4())
+    system_state['active_thread_id'] = my_thread_id
+    
+    print(f"🎬 Iniciando loop de procesamiento de video (Thread ID: {my_thread_id})...")
     
     frame_count = 0
     
-    # OPTIMIZACIÓN: Pre-alocar variables para reducir overhead
+    # OPTIMIZACIÓN: Mantener GC activo para estabilidad de memoria
     import gc
-    gc.disable()  # Desactivar GC durante procesamiento para FPS estables
+    gc.enable() 
     
-    while system_state['running']:
+    while system_state['running'] and system_state.get('active_thread_id') == my_thread_id:
         frame_count += 1
         
         try:
-            # Verificar si todavía estamos corriendo antes de leer
-            if not system_state['running']:
+            # Verificar si todavía estamos corriendo y si este hilo sigue activo
+            if not system_state['running'] or system_state.get('active_thread_id') != my_thread_id:
                 break
             
             # Capturar frame con verificación de conexión
@@ -1363,6 +1500,33 @@ def process_video_stream():
             
             system_state['occupancy_level'] = occupancy_level
             
+            # CONTROL HVAC: Evaluar y decidir si despachar comando
+            hvac_decision = hvac_controller.evaluate(stable_count, config['max_capacity'], occupancy_level)
+            hvac_transport = None
+            
+            if hvac_decision.get('should_dispatch'):
+                auto_command = hvac_controller.build_command(hvac_decision, source='auto')
+                serial_payload = hvac_controller.build_serial_payload(auto_command)
+                
+                # LOG DE COMANDO HVAC EN TERMINAL
+                power_status = "ON" if serial_payload.get('p') == 1 else "OFF"
+                sim_label = " (SIMULADO)" if arduino_bridge.simulation_mode else ""
+                print(f"📡 [HVAC AUTO]{sim_label} Enviando comando IR: "
+                      f"Marca={serial_payload.get('b').upper()}, "
+                      f"Power={power_status}, Temp={serial_payload.get('temp')}°C, "
+                      f"Fan={serial_payload.get('f').upper()}")
+                
+                hvac_transport = arduino_bridge.send_payload(serial_payload)
+                
+                if hvac_transport.get('success'):
+                    hvac_controller.register_dispatch(auto_command, hvac_transport)
+            
+            # Guardar estado HVAC para el dashboard
+            system_state['hvac'] = {
+                'decision': hvac_decision,
+                'last_transport': hvac_transport
+            }
+            
             # OPTIMIZACIÓN: Usar detecciones directas sin tracking complejo
             display_detections = detections
             
@@ -1438,6 +1602,9 @@ def process_video_stream():
             
             if elapsed < target_frame_time:
                 eventlet.sleep(target_frame_time - elapsed)
+            else:
+                # Ceder control aunque el procesamiento sea lento para evitar bloqueos de red
+                eventlet.sleep(0.001)
             
             # OPTIMIZACIÓN: Garbage collection cada 100 frames
             if frame_count % 100 == 0:
@@ -1516,3 +1683,5 @@ if __name__ == '__main__':
     
     # Ejecutar con SocketIO (soporta WebSockets)
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+
+# Trigger reload for Arduino

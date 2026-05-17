@@ -12,6 +12,7 @@ import {
 import axios from 'axios';
 import io from 'socket.io-client';
 import CameraConfigScreen from './CameraConfigScreen';
+import HVACConfigScreen from './HVACConfigScreen';
 import { API_CONFIG, detectBackend } from '../utils/constants';
 
 // IP de tu PC en la red local
@@ -25,6 +26,7 @@ export default function HomeScreenSimple() {
   const [status, setStatus] = useState(null);
   const [frameData, setFrameData] = useState(null);
   const [showCameraConfig, setShowCameraConfig] = useState(false);
+  const [showHvacConfig, setShowHvacConfig] = useState(false);
   const [actualFps, setActualFps] = useState(0);
   const [wsConnected, setWsConnected] = useState(false);
   const frameTimestamps = useRef([]);
@@ -252,6 +254,11 @@ export default function HomeScreenSimple() {
     return <CameraConfigScreen onBack={() => setShowCameraConfig(false)} />;
   }
 
+  // Mostrar pantalla de configuración de HVAC
+  if (showHvacConfig) {
+    return <HVACConfigScreen onBack={() => setShowHvacConfig(false)} />;
+  }
+
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
@@ -347,6 +354,13 @@ export default function HomeScreenSimple() {
           onPress={() => setShowCameraConfig(true)}
         >
           <Text style={styles.buttonText}>⚙️ CONFIGURAR CÁMARA</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.configButton, { backgroundColor: '#10b981', marginTop: 10 }]}
+          onPress={() => setShowHvacConfig(true)}
+        >
+          <Text style={styles.buttonText}>❄️ PANEL AIRE (HVAC)</Text>
         </TouchableOpacity>
       </View>
 

@@ -160,6 +160,67 @@ export const apiService = {
       throw error;
     }
   },
+  // --- HVAC SERVICES ---
+  
+  getHvacStatus: async () => {
+    try {
+      const response = await api.get('/api/hvac/status');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting HVAC status:', error);
+      throw error;
+    }
+  },
+
+  getHvacBrands: async () => {
+    try {
+      const response = await api.get('/api/hvac/brands');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting HVAC brands:', error);
+      throw error;
+    }
+  },
+
+  getSerialPorts: async () => {
+    try {
+      const response = await api.get('/api/hvac/serial/ports');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting serial ports:', error);
+      throw error;
+    }
+  },
+
+  connectSerial: async (port, baudrate = 115200) => {
+    try {
+      const response = await api.post('/api/hvac/serial/connect', { port, baudrate });
+      return response.data;
+    } catch (error) {
+      console.error('Error connecting serial:', error);
+      throw error;
+    }
+  },
+
+  disconnectSerial: async () => {
+    try {
+      const response = await api.post('/api/hvac/serial/disconnect');
+      return response.data;
+    } catch (error) {
+      console.error('Error disconnecting serial:', error);
+      throw error;
+    }
+  },
+
+  sendHvacCommand: async (commandData) => {
+    try {
+      const response = await api.post('/api/hvac/command', commandData);
+      return response.data;
+    } catch (error) {
+      console.error('Error sending HVAC command:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;

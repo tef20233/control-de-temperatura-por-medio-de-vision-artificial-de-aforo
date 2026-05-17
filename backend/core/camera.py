@@ -27,6 +27,10 @@ class CameraManager:
                 - 'tapo': Cámara Tapo via HTTP
                 - 'mjpeg': Stream MJPEG (IP Webcam, DroidCam, etc.)
         """
+        # Convertir a entero si representa un número de webcam (ej: "0" o "1")
+        if isinstance(source, str) and source.isdigit():
+            source = int(source)
+            
         self.source = source
         self.camera_type = self._detect_camera_type(source, camera_type)
         self.cap = None
@@ -72,7 +76,12 @@ class CameraManager:
             else:
                 # Usar cv2.VideoCapture para webcam y RTSP
                 logger.info(f"Conectando a cámara {self.camera_type} en {self.source}")
-                self.cap = cv2.VideoCapture(self.source)
+                
+                # OPTIMIZACIÓN WINDOWS: Usar DirectShow (CAP_DSHOW) para webcams
+                if self.camera_type == 'webcam' and isinstance(self.source, int):
+                    self.cap = cv2.VideoCapture(self.source, cv2.CAP_DSHOW)
+                else:
+                    self.cap = cv2.VideoCapture(self.source)
                 
                 if self.camera_type == 'webcam':
                     # MÁXIMA VELOCIDAD: Resolución ultra-baja = stream fluido

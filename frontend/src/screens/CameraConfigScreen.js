@@ -120,7 +120,7 @@ export default function CameraConfigScreen({ onBack }) {
       });
 
       if (response.data.message) {
-        window.alert('✅ Éxito\nCámara cambiada correctamente');
+        Alert.alert('✅ Éxito', 'Cámara cambiada correctamente');
         loadCurrentConfig();
       }
     } catch (error) {
@@ -131,7 +131,7 @@ export default function CameraConfigScreen({ onBack }) {
         errorMsg = 'Error de red. Verifica la conexión al backend.';
       }
       console.error('Error al cambiar cámara:', error);
-      window.alert(`❌ Error al Cambiar Cámara\n${errorMsg}`);
+      Alert.alert('❌ Error al Cambiar Cámara', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -176,14 +176,18 @@ export default function CameraConfigScreen({ onBack }) {
 
   const applyCameraConfig = () => {
     if (!cameraSource) {
-      window.alert('⚠️ Campo Requerido\nPor favor ingresa una fuente de cámara');
+      Alert.alert('⚠️ Campo Requerido', 'Por favor ingresa una fuente de cámara');
       return;
     }
 
-    const confirmed = window.confirm(`Confirmar Cambio\n¿Cambiar a: ${cameraSource}?`);
-    if (confirmed) {
-      changeCamera(cameraSource, cameraType);
-    }
+    Alert.alert(
+      'Confirmar Cambio',
+      `¿Deseas cambiar a la fuente: ${cameraSource}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Cambiar', onPress: () => changeCamera(cameraSource, cameraType) }
+      ]
+    );
   };
 
   const usePhoneCamera = () => {
