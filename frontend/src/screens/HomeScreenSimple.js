@@ -94,13 +94,11 @@ export default function HomeScreenSimple() {
 
     console.log('🚀 Iniciando conexión WebSocket en tiempo real');
 
-    // Crear conexión WebSocket
-    const wsUrl = (backendUrl || API_BASE_URL)
-      .replace('http://', 'ws://')
-      .replace('https://', 'wss://');
+    // socket.io-client necesita http:// (NO ws://), el upgrade lo hace internamente
+    const wsUrl = backendUrl || API_BASE_URL;
 
     const socket = io(wsUrl, {
-      transports: ['websocket', 'polling'], // Probar websocket primero, luego polling
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
