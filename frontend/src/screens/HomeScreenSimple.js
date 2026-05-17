@@ -205,8 +205,8 @@ export default function HomeScreenSimple() {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Conectando con el backend...</Text>
+        <ActivityIndicator size="large" color="#00E5FF" />
+        <Text style={styles.loadingText}>Sincronizando con el Núcleo IA...</Text>
       </View>
     );
   }
@@ -214,22 +214,21 @@ export default function HomeScreenSimple() {
   if (!connected) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorIcon}>⚠️</Text>
-        <Text style={styles.errorTitle}>No se puede conectar</Text>
+        <Text style={styles.errorIcon}>📡</Text>
+        <Text style={styles.errorTitle}>Enlace Fuera de Línea</Text>
         <Text style={styles.errorText}>
-          Verifica que el backend esté ejecutándose en:
+          No se detecta conexión con el servidor IA en la dirección:
         </Text>
         <Text style={styles.urlText}>{backendUrl || API_BASE_URL}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={checkConnection}>
-          <Text style={styles.retryButtonText}>REINTENTAR</Text>
+          <Text style={styles.retryButtonText}>REINTENTAR ENLACE</Text>
         </TouchableOpacity>
         <View style={styles.helpBox}>
-          <Text style={styles.helpTitle}>💡 Solución:</Text>
+          <Text style={styles.helpTitle}>💡 Diagnóstico de Red:</Text>
           <Text style={styles.helpText}>
-            1. Abre una terminal{'\n'}
-            2. cd backend{'\n'}
-            3. python app.py{'\n'}
-            4. Verifica que tu celular y PC estén en la misma WiFi
+            1. Abre una terminal en tu PC.{'\n'}
+            2. Ejecuta: <Text style={{ fontFamily: 'monospace', color: '#00E5FF' }}>cd backend && python app.py</Text>{'\n'}
+            3. Asegúrate de que el celular y la PC compartan la misma red WiFi.
           </Text>
         </View>
       </View>
@@ -240,7 +239,7 @@ export default function HomeScreenSimple() {
     typeof frameData?.count === 'number'
       ? frameData.count
       : (typeof status?.current_count === 'number' ? status.current_count : 0);
-
+ 
   const maxCapacity =
     typeof frameData?.max_capacity === 'number'
       ? frameData.max_capacity
@@ -248,60 +247,63 @@ export default function HomeScreenSimple() {
   const percentage = (currentCount / maxCapacity) * 100;
   const isOverCapacity = currentCount > maxCapacity;
   const cameraActive = status?.camera_active || false;
-
+ 
   // Mostrar pantalla de configuración de cámara
   if (showCameraConfig) {
     return <CameraConfigScreen onBack={() => setShowCameraConfig(false)} />;
   }
-
+ 
   // Mostrar pantalla de configuración de HVAC
   if (showHvacConfig) {
     return <HVACConfigScreen onBack={() => setShowHvacConfig(false)} />;
   }
-
+ 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>🎥 Control de Aforo</Text>
+        <View>
+          <Text style={styles.headerSubtitle}>SISTEMA DE SEGURIDAD</Text>
+          <Text style={styles.title}>🤖 Aforo Inteligente</Text>
+        </View>
         <View style={styles.statusContainer}>
-          <View style={[styles.statusBadge, connected && styles.statusConnected]}>
+          <View style={[styles.statusBadge, connected ? styles.statusConnected : styles.statusDisconnected]}>
             <Text style={styles.statusText}>
-              {connected ? '🟢 API' : '🔴 API'}
+              {connected ? '● API OK' : '○ API ERR'}
             </Text>
           </View>
-          <View style={[styles.statusBadge, wsConnected && styles.statusConnected]}>
+          <View style={[styles.statusBadge, wsConnected ? styles.statusConnected : styles.statusDisconnected]}>
             <Text style={styles.statusText}>
-              {wsConnected ? '🟢 WS' : '🔴 WS'}
+              {wsConnected ? '● LIVE' : '○ OFFLINE'}
             </Text>
           </View>
         </View>
       </View>
-
+ 
       {/* Alert Banner */}
       {isOverCapacity && (
         <View style={styles.alertBanner}>
-          <Text style={styles.alertText}>⚠️ ALERTA: AFORO EXCEDIDO</Text>
+          <Text style={styles.alertText}>🚨 ALERTA: AFORO MÁXIMO EXCEDIDO</Text>
         </View>
       )}
-
+ 
       {/* Video Preview - WebSocket Tiempo Real */}
       <View style={styles.videoContainer}>
         {frameData && frameData.frame ? (
-          <View style={styles.videoWrapper}>
+          <View style={[styles.videoWrapper, isOverCapacity && styles.videoWrapperDanger]}>
             <Image
               source={{ 
                 uri: `data:image/jpeg;base64,${frameData.frame}`,
-                cache: 'reload' // Evitar caché para mejor rendimiento en tiempo real
+                cache: 'reload'
               }}
               style={styles.videoImage}
               resizeMode="contain"
-              fadeDuration={0} // Sin animación de fade para mejor FPS
+              fadeDuration={0}
             />
             <View style={styles.videoOverlay}>
               <View style={styles.detectionBadge}>
                 <Text style={styles.detectionText}>
-                  👤 {frameData.count || 0} personas
+                  👤 {frameData.count || 0} Pers.
                 </Text>
               </View>
               <View style={styles.fpsBadge}>
@@ -311,64 +313,66 @@ export default function HomeScreenSimple() {
               </View>
               {wsConnected && (
                 <View style={styles.wsIndicator}>
-                  <Text style={styles.wsText}>⚡ LIVE</Text>
+                  <Text style={styles.wsText}>⚡ TIEMPO REAL</Text>
                 </View>
               )}
             </View>
           </View>
         ) : (
-          <View style={styles.videoPlaceholder}>
-            <Text style={styles.videoIcon}>📹</Text>
+          <View style={[styles.videoPlaceholder, cameraActive && styles.videoPlaceholderActive]}>
+            <Text style={styles.videoIcon}>{cameraActive ? '📡' : '📸'}</Text>
             <Text style={styles.videoText}>
-              {cameraActive ? 'Esperando frames...' : 'Cámara Detenida'}
+              {cameraActive ? 'Sincronizando flujo de video...' : 'Monitoreo Inactivo'}
             </Text>
             {cameraActive && (
               <>
                 <ActivityIndicator 
                   size="large" 
-                  color="#3b82f6" 
-                  style={{ marginTop: 10 }}
+                  color="#00E5FF" 
+                  style={{ marginTop: 15 }}
                 />
                 <Text style={styles.videoSubText}>
-                  {wsConnected ? 'WebSocket conectado' : 'Conectando...'}
+                  {wsConnected ? 'Canal WebSocket Abierto' : 'Estableciendo enlace de video...'}
                 </Text>
               </>
             )}
           </View>
         )}
       </View>
-
+ 
       {/* Camera Controls */}
       <View style={styles.controlsRow}>
         <TouchableOpacity
-          style={[styles.button, cameraActive && styles.buttonDanger]}
+          style={[styles.button, cameraActive ? styles.buttonDanger : styles.buttonSuccess]}
           onPress={cameraActive ? stopCamera : startCamera}
         >
           <Text style={styles.buttonText}>
-            {cameraActive ? '⏹️ DETENER CÁMARA' : '▶️ INICIAR CÁMARA'}
+            {cameraActive ? '⏹ DETENER CAPTURA' : '▶ INICIAR CÁMARA IA'}
           </Text>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={styles.configButton}
-          onPress={() => setShowCameraConfig(true)}
-        >
-          <Text style={styles.buttonText}>⚙️ CONFIGURAR CÁMARA</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.configButton, { backgroundColor: '#10b981', marginTop: 10 }]}
-          onPress={() => setShowHvacConfig(true)}
-        >
-          <Text style={styles.buttonText}>❄️ PANEL AIRE (HVAC)</Text>
-        </TouchableOpacity>
+        <View style={styles.dualRow}>
+          <TouchableOpacity
+            style={styles.configButton}
+            onPress={() => setShowCameraConfig(true)}
+          >
+            <Text style={styles.buttonText}>⚙ CONFIGURAR</Text>
+          </TouchableOpacity>
+ 
+          <TouchableOpacity
+            style={styles.hvacButton}
+            onPress={() => setShowHvacConfig(true)}
+          >
+            <Text style={styles.buttonText}>❄ CLIMATIZACIÓN (IR)</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
+ 
       {/* Occupancy Card */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>AFORO ACTUAL</Text>
+      <View style={[styles.card, isOverCapacity && styles.cardDanger]}>
+        <Text style={styles.cardTitle}>OCUPACIÓN DE SALA</Text>
         <View style={styles.countContainer}>
-          <Text style={styles.countNumber}>{currentCount}</Text>
+          <Text style={[styles.countNumber, isOverCapacity && styles.countNumberDanger]}>{currentCount}</Text>
           <Text style={styles.countSeparator}>/</Text>
           <Text style={styles.countMax}>{maxCapacity}</Text>
         </View>
@@ -383,201 +387,251 @@ export default function HomeScreenSimple() {
             ]}
           />
         </View>
-        <Text style={styles.percentageText}>{percentage.toFixed(0)}%</Text>
+        <Text style={styles.percentageText}>Capacidad Utilizada: {percentage.toFixed(0)}%</Text>
       </View>
-
+ 
       {/* Metrics Grid */}
       <View style={styles.metricsGrid}>
         <View style={styles.metricCard}>
           <Text style={styles.metricValue}>
             {actualFps > 0 ? actualFps.toFixed(1) : (status?.fps?.toFixed(1) || '0.0')}
           </Text>
-          <Text style={styles.metricLabel}>FPS Real</Text>
+          <Text style={styles.metricLabel}>FPS Promedio</Text>
         </View>
         
         <View style={styles.metricCard}>
           <Text style={styles.metricValue}>
-            {status?.models_loaded || 0}/{status?.models_total || 4}
+            {status?.models_loaded || 0}
           </Text>
-          <Text style={styles.metricLabel}>Modelos</Text>
+          <Text style={styles.metricLabel}>Redes YOLO</Text>
         </View>
-
+ 
         <View style={styles.metricCard}>
-          <Text style={styles.metricValue}>
-            {status?.config?.ensemble_strategy || 'N/A'}
+          <Text style={[styles.metricValue, { fontSize: 13, textTransform: 'uppercase' }]}>
+            {status?.config?.ensemble_strategy || 'PROMEDIO'}
           </Text>
-          <Text style={styles.metricLabel}>Estrategia</Text>
+          <Text style={styles.metricLabel}>Mapeo IA</Text>
         </View>
       </View>
-
+ 
       {/* Info Card */}
       <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>ℹ️ Estado del Sistema</Text>
+        <Text style={styles.infoTitle}>📋 Diagnóstico de Enlace</Text>
         <Text style={styles.infoText}>
-          • Backend: {connected ? 'Funcionando ✅' : 'Desconectado ❌'}
+          • Motor de Visión: <Text style={{ color: '#00E5FF', fontWeight: 'bold' }}>YOLOv11s Activo</Text>
         </Text>
         <Text style={styles.infoText}>
-          • Cámara: {cameraActive ? 'Activa ✅' : 'Detenida ⏸️'}
+          • Canal Físico: {cameraActive ? 'Transmitiendo ✅' : 'En Espera ⏸️'}
         </Text>
         <Text style={styles.infoText}>
-          • Modelos cargados: {status?.models_loaded || 0}
+          • Umbral de Filtro: {status?.config?.confidence_threshold || 0.5} (50% Confianza)
         </Text>
         <Text style={styles.infoText}>
-          • Umbral de confianza: {status?.config?.confidence_threshold || 0.5}
+          • Climatizador Serial: {status?.serial?.connected ? 'Arduino Conectado 🟢' : 'Modo Simulación 📡'}
         </Text>
       </View>
-
+ 
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Sistema de Control de Aforo v1.0
+          SALA DE CONTROL INTELIGENTE DE AFORO & HVAC v2.0
         </Text>
       </View>
     </ScrollView>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#080C14',
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f3f4f6',
+    padding: 24,
+    backgroundColor: '#080C14',
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#6b7280',
+    marginTop: 15,
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
   },
   errorIcon: {
-    fontSize: 64,
+    fontSize: 54,
     marginBottom: 20,
   },
   errorTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#FFFFFF',
     marginBottom: 10,
+    letterSpacing: 0.5,
   },
   errorText: {
-    fontSize: 16,
-    color: '#6b7280',
+    fontSize: 14,
+    color: '#94A3B8',
     textAlign: 'center',
-    marginBottom: 10,
+    lineHeight: 22,
+    marginBottom: 8,
   },
   urlText: {
     fontSize: 14,
-    color: '#3b82f6',
+    color: '#00E5FF',
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 25,
+    fontFamily: 'monospace',
   },
   retryButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#00E5FF',
     paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
     marginBottom: 30,
+    shadowColor: '#00E5FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
   },
   retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#080C14',
+    fontSize: 14,
     fontWeight: 'bold',
+    letterSpacing: 1,
   },
   helpBox: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#101726',
     padding: 20,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#f59e0b',
-    maxWidth: 300,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1E2942',
+    width: '100%',
   },
   helpTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
+    color: '#F59E0B',
     marginBottom: 10,
   },
   helpText: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 13,
+    color: '#94A3B8',
+    lineHeight: 20,
   },
   header: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#0E1324',
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#1E2942',
+  },
+  headerSubtitle: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#94A3B8',
+    letterSpacing: 2,
+    marginBottom: 2,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFFFFF',
   },
   statusContainer: {
-    flexDirection: 'row',
-    gap: 8,
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 5,
   },
   statusBadge: {
-    backgroundColor: '#ef4444',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   statusConnected: {
-    backgroundColor: '#10b981',
+    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+    borderColor: '#00E676',
+  },
+  statusDisconnected: {
+    backgroundColor: 'rgba(255, 45, 85, 0.1)',
+    borderColor: '#FF2D55',
   },
   statusText: {
-    color: '#fff',
-    fontSize: 12,
+    color: '#FFFFFF',
+    fontSize: 9,
     fontWeight: 'bold',
+    letterSpacing: 1,
   },
   alertBanner: {
-    backgroundColor: '#ef4444',
-    padding: 15,
+    backgroundColor: '#FF2D55',
+    padding: 12,
     alignItems: 'center',
+    shadowColor: '#FF2D55',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 4,
   },
   alertText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: 'bold',
+    letterSpacing: 1,
   },
   videoContainer: {
     margin: 20,
-    marginBottom: 10,
+    marginBottom: 15,
   },
   videoPlaceholder: {
-    backgroundColor: '#1f2937',
-    height: 250,
-    borderRadius: 12,
+    backgroundColor: '#0F1524',
+    height: 260,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1E2942',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  videoPlaceholderActive: {
+    borderColor: '#00E5FF',
+    shadowColor: '#00E5FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+  },
   videoIcon: {
-    fontSize: 64,
+    fontSize: 48,
     marginBottom: 10,
   },
   videoText: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   videoSubText: {
-    color: '#9ca3af',
-    fontSize: 14,
+    color: '#64748B',
+    fontSize: 12,
     marginTop: 10,
     textAlign: 'center',
   },
   videoWrapper: {
     position: 'relative',
-    height: 250,
-    borderRadius: 12,
+    height: 260,
+    borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#000',
+    borderWidth: 2,
+    borderColor: '#1E2942',
+  },
+  videoWrapperDanger: {
+    borderColor: '#FF2D55',
   },
   videoImage: {
     width: '100%',
@@ -585,94 +639,124 @@ const styles = StyleSheet.create({
   },
   videoOverlay: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    right: 10,
+    top: 12,
+    left: 12,
+    right: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   detectionBadge: {
-    backgroundColor: 'rgba(59, 130, 246, 0.9)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(8, 12, 20, 0.8)',
+    borderWidth: 1,
+    borderColor: '#00E5FF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
   },
   detectionText: {
-    color: '#fff',
-    fontSize: 14,
+    color: '#00E5FF',
+    fontSize: 12,
     fontWeight: 'bold',
   },
   fpsBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.9)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(8, 12, 20, 0.8)',
+    borderWidth: 1,
+    borderColor: '#00E676',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
   },
   fpsText: {
-    color: '#fff',
-    fontSize: 12,
+    color: '#00E676',
+    fontSize: 11,
     fontWeight: 'bold',
   },
   wsIndicator: {
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 45, 85, 0.8)',
+    borderWidth: 1,
+    borderColor: '#FF2D55',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
   },
   wsText: {
-    color: '#fff',
-    fontSize: 12,
+    color: '#FFFFFF',
+    fontSize: 11,
     fontWeight: 'bold',
-  },
-  videoSubText: {
-    color: '#9ca3af',
-    fontSize: 14,
-    marginTop: 10,
-    textAlign: 'center',
+    letterSpacing: 0.5,
   },
   controlsRow: {
     marginHorizontal: 20,
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#10b981',
-    padding: 15,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 14,
     alignItems: 'center',
     marginBottom: 10,
-  },
-  buttonDanger: {
-    backgroundColor: '#ef4444',
-  },
-  configButton: {
-    backgroundColor: '#6366f1',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  card: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
     elevation: 3,
   },
-  cardTitle: {
-    fontSize: 14,
+  buttonSuccess: {
+    backgroundColor: '#00E676',
+    shadowColor: '#00E676',
+  },
+  buttonDanger: {
+    backgroundColor: '#FF2D55',
+    shadowColor: '#FF2D55',
+  },
+  dualRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  configButton: {
+    flex: 1,
+    backgroundColor: '#1E2942',
+    padding: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2D3B5C',
+  },
+  hvacButton: {
+    flex: 1.2,
+    backgroundColor: '#7C4DFF',
+    padding: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: 'bold',
-    color: '#6b7280',
-    marginBottom: 15,
     letterSpacing: 1,
+  },
+  card: {
+    backgroundColor: '#101726',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 22,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1F2942',
+  },
+  cardDanger: {
+    borderColor: '#FF2D55',
+    backgroundColor: '#1C121F',
+  },
+  cardTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#94A3B8',
+    marginBottom: 15,
+    letterSpacing: 2,
   },
   countContainer: {
     flexDirection: 'row',
@@ -681,37 +765,48 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   countNumber: {
-    fontSize: 64,
+    fontSize: 72,
     fontWeight: 'bold',
-    color: '#3b82f6',
+    color: '#00E5FF',
+    textShadowColor: 'rgba(0, 229, 255, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
+  },
+  countNumberDanger: {
+    color: '#FF2D55',
+    textShadowColor: 'rgba(255, 45, 85, 0.3)',
   },
   countSeparator: {
     fontSize: 32,
-    color: '#6b7280',
-    marginHorizontal: 5,
+    color: '#334155',
+    marginHorizontal: 10,
   },
   countMax: {
     fontSize: 32,
-    color: '#6b7280',
+    color: '#64748B',
+    fontWeight: 'bold',
   },
   progressBar: {
-    height: 16,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 8,
+    height: 12,
+    backgroundColor: '#1E2942',
+    borderRadius: 6,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#00E5FF',
+    borderRadius: 6,
   },
   progressDanger: {
-    backgroundColor: '#ef4444',
+    backgroundColor: '#FF2D55',
   },
   percentageText: {
     textAlign: 'center',
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    letterSpacing: 0.5,
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -721,51 +816,57 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 12,
+    backgroundColor: '#101726',
+    padding: 16,
+    borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#1F2942',
   },
   metricValue: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#3b82f6',
-    marginBottom: 5,
+    color: '#00E5FF',
+    marginBottom: 6,
   },
   metricLabel: {
-    fontSize: 12,
-    color: '#6b7280',
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   infoCard: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#0F1A2C',
     marginHorizontal: 20,
     marginBottom: 20,
-    padding: 20,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
+    padding: 22,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1E3A8A',
   },
   infoTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#3B82F6',
+    marginBottom: 12,
+    letterSpacing: 0.5,
   },
   infoText: {
-    fontSize: 14,
-    marginVertical: 3,
+    fontSize: 13,
+    color: '#94A3B8',
+    marginVertical: 4,
     lineHeight: 20,
   },
   footer: {
-    padding: 20,
+    padding: 25,
     alignItems: 'center',
   },
   footerText: {
-    fontSize: 12,
-    color: '#6b7280',
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#334155',
+    letterSpacing: 2,
+    textAlign: 'center',
   },
 });

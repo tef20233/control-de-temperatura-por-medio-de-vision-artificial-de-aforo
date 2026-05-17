@@ -5,7 +5,7 @@ import HomeScreenSimple from './src/screens/HomeScreenSimple';
 export default function App() {
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3b82f6" />
+      <StatusBar barStyle="light-content" backgroundColor="#090D16" />
       <HomeScreenSimple />
     </View>
   );

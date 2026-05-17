@@ -140,8 +140,8 @@ export default function HVACConfigScreen({ onBack }) {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Cargando módulo HVAC...</Text>
+        <ActivityIndicator size="large" color="#00E5FF" />
+        <Text style={styles.loadingText}>Sincronizando Módulo HVAC...</Text>
       </View>
     );
   }
@@ -155,19 +155,22 @@ export default function HVACConfigScreen({ onBack }) {
       {/* Header Custom */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#00E5FF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Control de Climatización (HVAC)</Text>
+        <View>
+          <Text style={styles.headerSubtitle}>MÓDULO DE CLIMA FÍSICO</Text>
+          <Text style={styles.headerTitle}>Control de Climatización</Text>
+        </View>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 40 }}>
         
         {/* Status Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>ESTADO ACTUAL</Text>
+            <Text style={styles.cardTitle}>MONITOR DE ESTADO</Text>
             <View style={[styles.badge, isConnected ? styles.badgeSuccess : styles.badgeDanger]}>
-              <Text style={styles.badgeText}>{isConnected ? 'SERIAL OK' : 'DESCONECTADO'}</Text>
+              <Text style={styles.badgeText}>{isConnected ? '● SERIAL OK' : '○ DESCONECTADO'}</Text>
             </View>
           </View>
           
@@ -178,7 +181,7 @@ export default function HVACConfigScreen({ onBack }) {
             </View>
             <View style={styles.statusItem}>
               <Text style={styles.statusLabel}>Temp. Objetivo</Text>
-              <Text style={styles.statusValue}>{lastDecision.target_temperature_c || '--'}°C</Text>
+              <Text style={[styles.statusValue, { color: '#00E5FF' }]}>{lastDecision.target_temperature_c || '--'}°C</Text>
             </View>
             <View style={styles.statusItem}>
               <Text style={styles.statusLabel}>Modo Auto</Text>
@@ -191,26 +194,28 @@ export default function HVACConfigScreen({ onBack }) {
           </View>
           
           {lastDecision.reason && (
-            <Text style={styles.reasonText}>Motivo: {lastDecision.reason}</Text>
+            <Text style={styles.reasonText}>Lógica IA: {lastDecision.reason}</Text>
           )}
         </View>
 
         {/* Serial Config */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>CONFIGURACIÓN SERIAL (ARDUINO)</Text>
+          <Text style={styles.cardTitle}>ENLACE SERIAL (CONEXIÓN USB)</Text>
           
-          <Text style={styles.label}>Puerto USB / Serial</Text>
+          <Text style={styles.label}>Puerto Serial Detectado</Text>
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={serialConfig.port}
               onValueChange={(itemValue) => setSerialConfig({ ...serialConfig, port: itemValue })}
               enabled={!isConnected}
+              dropdownIconColor="#00E5FF"
+              style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }}
             >
               {ports.length === 0 ? (
-                <Picker.Item label="No se detectan puertos" value="" />
+                <Picker.Item label="Buscando puertos USB..." value="" style={{ color: '#94A3B8', backgroundColor: '#0F172A' }} />
               ) : (
                 ports.map(p => (
-                  <Picker.Item key={p.device} label={`${p.device} (${p.description})`} value={p.device} />
+                  <Picker.Item key={p.device} label={`${p.device} (${p.description})`} value={p.device} style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
                 ))
               )}
             </Picker>
@@ -223,67 +228,72 @@ export default function HVACConfigScreen({ onBack }) {
                 onPress={handleConnect}
                 disabled={connecting}
               >
-                {connecting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>CONECTAR</Text>}
+                {connecting ? <ActivityIndicator color="#080C14" /> : <Text style={styles.buttonText}>CONECTAR HARDWARE</Text>}
               </TouchableOpacity>
             ) : (
               <TouchableOpacity style={[styles.actionButton, styles.disconnectButton]} onPress={handleDisconnect}>
-                <Text style={styles.buttonText}>DESCONECTAR</Text>
+                <Text style={styles.buttonText}>DESCONECTAR HARDWARE</Text>
               </TouchableOpacity>
             )}
             
             <TouchableOpacity style={styles.refreshButton} onPress={loadInitialData}>
-              <Ionicons name="refresh" size={20} color={COLORS.primary} />
+              <Ionicons name="refresh" size={20} color="#00E5FF" />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Manual Controls */}
         <View style={[styles.card, !isConnected && styles.cardDisabled]}>
-          <Text style={styles.cardTitle}>CONTROL MANUAL IR</Text>
+          <Text style={styles.cardTitle}>CONSOLA DE COMANDO MANUAL (IR)</Text>
           
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Marca AC</Text>
+              <Text style={styles.label}>Fabricante AC</Text>
               <View style={styles.pickerContainerSmall}>
                 <Picker
                   selectedValue={manualCmd.brand}
                   onValueChange={(v) => setManualCmd({ ...manualCmd, brand: v })}
+                  dropdownIconColor="#00E5FF"
+                  style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }}
                 >
                   {Object.keys(brands).map(key => (
-                    <Picker.Item key={key} label={brands[key].display_name} value={key} />
+                    <Picker.Item key={key} label={brands[key].display_name} value={key} style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
                   ))}
                 </Picker>
               </View>
             </View>
             
             <View style={{ width: 100, alignItems: 'center' }}>
-              <Text style={styles.label}>Power</Text>
+              <Text style={styles.label}>Estado AC</Text>
               <Switch 
                 value={manualCmd.power} 
                 onValueChange={(v) => setManualCmd({ ...manualCmd, power: v })}
-                trackColor={{ false: '#767577', true: COLORS.primary }}
+                trackColor={{ false: '#1E2942', true: '#7C4DFF' }}
+                thumbColor={manualCmd.power ? '#00E5FF' : '#94A3B8'}
               />
             </View>
           </View>
 
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Modo</Text>
+              <Text style={styles.label}>Modo Climatización</Text>
               <View style={styles.pickerContainerSmall}>
                 <Picker
                   selectedValue={manualCmd.mode}
                   onValueChange={(v) => setManualCmd({ ...manualCmd, mode: v })}
+                  dropdownIconColor="#00E5FF"
+                  style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }}
                 >
-                  <Picker.Item label="Cool (Frío)" value="cool" />
-                  <Picker.Item label="Heat (Calor)" value="heat" />
-                  <Picker.Item label="Fan (Vent.)" value="fan" />
-                  <Picker.Item label="Dry (Seco)" value="dry" />
+                  <Picker.Item label="Cool (Frío)" value="cool" style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
+                  <Picker.Item label="Heat (Calor)" value="heat" style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
+                  <Picker.Item label="Fan (Ventilación)" value="fan" style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
+                  <Picker.Item label="Dry (Secado)" value="dry" style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
                 </Picker>
               </View>
             </View>
             
             <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.label}>Temp: {manualCmd.temp}°C</Text>
+              <Text style={styles.label}>Temp: <Text style={{ color: '#00E5FF' }}>{manualCmd.temp}°C</Text></Text>
               <View style={styles.tempButtons}>
                 <TouchableOpacity onPress={() => setManualCmd(p => ({ ...p, temp: Math.max(16, p.temp - 1) }))} style={styles.tempBtn}>
                   <Text style={styles.tempBtnText}>-</Text>
@@ -300,8 +310,8 @@ export default function HVACConfigScreen({ onBack }) {
             onPress={sendManualCommand}
             disabled={!isConnected}
           >
-            <Ionicons name="send" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.buttonText}>ENVIAR COMANDO IR</Text>
+            <Ionicons name="send" size={18} color="#080C14" style={{ marginRight: 8 }} />
+            <Text style={[styles.buttonText, { color: '#080C14' }]}>TRANSMITIR COMANDO IR</Text>
           </TouchableOpacity>
         </View>
 
@@ -314,76 +324,90 @@ export default function HVACConfigScreen({ onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#080C14',
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#080C14',
+    padding: 24,
   },
   loadingText: {
-    marginTop: 10,
-    color: '#6b7280',
+    marginTop: 15,
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
   },
   header: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#0E1324',
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 50,
     flexDirection: 'row',
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#1E2942',
   },
   backButton: {
     padding: 5,
-    marginRight: 10,
+    marginRight: 15,
+  },
+  headerSubtitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#64748B',
+    letterSpacing: 2,
+    marginBottom: 2,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
     padding: 15,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: '#101726',
+    borderRadius: 16,
+    padding: 22,
     marginBottom: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: '#1F2942',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 18,
   },
   cardTitle: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 'bold',
-    color: '#6b7280',
-    letterSpacing: 0.5,
+    color: '#94A3B8',
+    letterSpacing: 1,
   },
   badge: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   badgeSuccess: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+    borderColor: '#00E676',
   },
   badgeDanger: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: 'rgba(255, 45, 85, 0.1)',
+    borderColor: '#FF2D55',
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: 'bold',
-    color: '#166534',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   statusGrid: {
     flexDirection: 'row',
@@ -394,40 +418,47 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   statusLabel: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginBottom: 2,
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: 'bold',
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
   statusValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#FFFFFF',
   },
   reasonText: {
     fontSize: 12,
-    color: COLORS.primary,
+    color: '#00E5FF',
     fontStyle: 'italic',
-    marginTop: 5,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderColor: '#1F2942',
+    paddingTop: 8,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#94A3B8',
     marginBottom: 8,
+    marginTop: 12,
+    letterSpacing: 0.5,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    backgroundColor: '#f9fafb',
+    borderColor: '#1F2942',
+    borderRadius: 12,
+    backgroundColor: '#0F172A',
     marginBottom: 15,
     overflow: 'hidden',
   },
   pickerContainerSmall: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    backgroundColor: '#f9fafb',
+    borderColor: '#1F2942',
+    borderRadius: 12,
+    backgroundColor: '#0F172A',
     overflow: 'hidden',
     height: 50,
     justifyContent: 'center',
@@ -436,39 +467,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    marginTop: 5,
   },
   actionButton: {
     flex: 1,
     height: 50,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   connectButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#00E5FF',
+    shadowColor: '#00E5FF',
   },
   disconnectButton: {
-    backgroundColor: '#ef4444',
+    backgroundColor: '#FF2D55',
+    shadowColor: '#FF2D55',
   },
   refreshButton: {
     width: 50,
     height: 50,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: '#2D3B5C',
+    backgroundColor: '#1E2942',
     justifyContent: 'center',
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
+    color: '#080C14',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 13,
+    letterSpacing: 1,
   },
   disabledButton: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   cardDisabled: {
-    opacity: 0.6,
+    opacity: 0.4,
   },
   row: {
     flexDirection: 'row',
@@ -481,27 +521,39 @@ const styles = StyleSheet.create({
   },
   tempBtn: {
     flex: 1,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: '#7C4DFF',
     height: 40,
-    borderRadius: 6,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tempBtnText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#FFFFFF',
   },
   sendButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#00E676',
     height: 55,
-    borderRadius: 10,
+    borderRadius: 14,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 15,
+    shadowColor: '#00E676',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
   },
   sendButtonDisabled: {
-    backgroundColor: '#9ca3af',
+    backgroundColor: '#1F2942',
+    opacity: 0.5,
   }
 });
+
