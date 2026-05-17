@@ -426,51 +426,61 @@ export default function HomeScreenSimple() {
         <Text style={styles.percentageText}>Capacidad Utilizada: {percentage.toFixed(0)}%</Text>
       </View>
  
-      {/* HVAC Climate Card - Real-time */}
-      <View style={styles.hvacCard}>
-        <Text style={styles.cardTitle}>CLIMATIZACIÓN AUTOMÁTICA</Text>
-        <View style={styles.hvacGrid}>
-          <View style={styles.hvacMetric}>
-            <Text style={styles.hvacTempValue}>
+      {/* Premium HVAC Climate Card - Real-time */}
+      <View style={styles.hvacPremiumCard}>
+        <View style={styles.hvacPremiumHeader}>
+          <Text style={styles.hvacPremiumTitle}>⚡ CLIMATIZACIÓN AUTOMÁTICA</Text>
+          <View style={[styles.hvacStatusDot, { backgroundColor: frameData?.hvac?.serial_connected ? '#00E5FF' : '#64748B' }]} />
+        </View>
+
+        <View style={styles.hvacPremiumGrid}>
+          {/* Temperature */}
+          <View style={styles.hvacPremiumMainPanel}>
+            <Text style={styles.hvacPremiumTempValue}>
               {frameData?.hvac?.target_temp != null
                 ? `${Math.round(frameData.hvac.target_temp)}°`
                 : '--°'}
             </Text>
-            <Text style={styles.hvacMetricLabel}>Temp. Objetivo</Text>
+            <Text style={styles.hvacPremiumLabel}>OBJETIVO</Text>
           </View>
-          <View style={styles.hvacMetric}>
-            <Text style={styles.hvacModeValue}>
-              {frameData?.hvac?.mode === 'cool' ? '❄️' : frameData?.hvac?.mode === 'heat' ? '🔥' : '🌀'}
-            </Text>
-            <Text style={styles.hvacMetricLabel}>
-              {frameData?.hvac?.mode === 'cool' ? 'Frío' : frameData?.hvac?.mode === 'heat' ? 'Calor' : 'Auto'}
-            </Text>
-          </View>
-          <View style={styles.hvacMetric}>
-            <Text style={styles.hvacModeValue}>
-              {frameData?.hvac?.fan === 'auto' ? '🔄' : frameData?.hvac?.fan === 'high' ? '💨' : '🍃'}
-            </Text>
-            <Text style={styles.hvacMetricLabel}>
-              Fan: {(frameData?.hvac?.fan || 'auto').toUpperCase()}
-            </Text>
+
+          {/* Details */}
+          <View style={styles.hvacPremiumDetailsPanel}>
+            <View style={styles.hvacPremiumDetailRow}>
+              <Text style={styles.hvacPremiumDetailIcon}>
+                {frameData?.hvac?.mode === 'cool' ? '❄️' : frameData?.hvac?.mode === 'heat' ? '🔥' : '🌀'}
+              </Text>
+              <Text style={styles.hvacPremiumDetailText}>
+                {frameData?.hvac?.mode === 'cool' ? 'FRÍO' : frameData?.hvac?.mode === 'heat' ? 'CALOR' : 'AUTO'}
+              </Text>
+            </View>
+            <View style={styles.hvacPremiumDetailRow}>
+              <Text style={styles.hvacPremiumDetailIcon}>
+                {frameData?.hvac?.fan === 'auto' ? '🔄' : frameData?.hvac?.fan === 'high' ? '💨' : '🍃'}
+              </Text>
+              <Text style={styles.hvacPremiumDetailText}>
+                VENT: {(frameData?.hvac?.fan || 'AUTO').toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.hvacPremiumDetailRow}>
+              <Text style={styles.hvacPremiumDetailIcon}>
+                {frameData?.hvac?.power ? '⚡' : '⏸'}
+              </Text>
+              <Text style={[styles.hvacPremiumDetailText, { color: frameData?.hvac?.power ? '#00E676' : '#FF2D55' }]}>
+                {frameData?.hvac?.power ? 'ACTIVO' : 'INACTIVO'}
+              </Text>
+            </View>
           </View>
         </View>
-        <View style={styles.hvacStatusRow}>
-          <View style={[styles.hvacChip, { backgroundColor: frameData?.hvac?.power ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 45, 85, 0.15)' }]}>
-            <Text style={[styles.hvacChipText, { color: frameData?.hvac?.power ? '#00E676' : '#FF2D55' }]}>
-              {frameData?.hvac?.power ? '⚡ ENCENDIDO' : '⏸ APAGADO'}
-            </Text>
-          </View>
-          <View style={[styles.hvacChip, { backgroundColor: frameData?.hvac?.serial_connected ? 'rgba(0, 229, 255, 0.15)' : 'rgba(100, 116, 139, 0.15)' }]}>
-            <Text style={[styles.hvacChipText, { color: frameData?.hvac?.serial_connected ? '#00E5FF' : '#64748B' }]}>
-              {frameData?.hvac?.serial_connected ? '🔌 Arduino Real' : '📡 Simulación'}
-            </Text>
-          </View>
+
+        <View style={styles.hvacPremiumFooter}>
+          <Text style={styles.hvacPremiumOccupancyText}>
+            Nivel de ocupación: <Text style={{ color: '#00E5FF', fontWeight: 'bold' }}>{frameData?.occupancy_level || 'Esperando...'}</Text>
+          </Text>
+          {frameData?.hvac?.should_dispatch && (
+            <Text style={styles.hvacPremiumDispatchText}>Comando Enviado ✅</Text>
+          )}
         </View>
-        <Text style={styles.hvacOccupancyInfo}>
-          Nivel de ocupación: {frameData?.occupancy_level || 'Esperando datos...'}
-          {frameData?.hvac?.should_dispatch ? '  •  Comando IR enviado ✅' : ''}
-        </Text>
       </View>
 
       {/* Metrics Grid */}
@@ -497,23 +507,7 @@ export default function HomeScreenSimple() {
         </View>
       </View>
  
-      {/* Info Card */}
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>📋 Diagnóstico de Enlace</Text>
-        <Text style={styles.infoText}>
-          • Motor de Visión: <Text style={{ color: '#00E5FF', fontWeight: 'bold' }}>YOLOv11s Activo</Text>
-        </Text>
-        <Text style={styles.infoText}>
-          • Canal Físico: {cameraActive ? 'Transmitiendo ✅' : 'En Espera ⏸️'}
-        </Text>
-        <Text style={styles.infoText}>
-          • Umbral de Filtro: {status?.config?.confidence_threshold || 0.5} (50% Confianza)
-        </Text>
-        <Text style={styles.infoText}>
-          • Climatizador Serial: {status?.serial?.connected ? 'Arduino Conectado 🟢' : 'Modo Simulación 📡'}
-        </Text>
-      </View>
- 
+
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
@@ -993,69 +987,104 @@ const styles = StyleSheet.create({
   radarCenterIcon: {
     fontSize: 20,
   },
-  hvacCard: {
-    backgroundColor: '#101726',
+  hvacPremiumCard: {
+    backgroundColor: 'rgba(16, 23, 38, 0.8)',
     marginHorizontal: 20,
     marginBottom: 20,
-    padding: 22,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#7C4DFF',
-    shadowColor: '#7C4DFF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  hvacGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  hvacMetric: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  hvacTempValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#7C4DFF',
-    textShadowColor: 'rgba(124, 77, 255, 0.3)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
-  },
-  hvacModeValue: {
-    fontSize: 28,
-  },
-  hvacMetricLabel: {
-    fontSize: 10,
-    color: '#64748B',
-    fontWeight: 'bold',
-    marginTop: 4,
-    letterSpacing: 0.5,
-    textAlign: 'center',
-  },
-  hvacStatusRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 10,
-    marginBottom: 10,
-  },
-  hvacChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 229, 255, 0.4)',
+    overflow: 'hidden',
   },
-  hvacChipText: {
-    fontSize: 11,
+  hvacPremiumHeader: {
+    backgroundColor: 'rgba(0, 229, 255, 0.1)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 229, 255, 0.2)',
+  },
+  hvacPremiumTitle: {
+    color: '#00E5FF',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
+  hvacStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    shadowColor: '#00E5FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+  },
+  hvacPremiumGrid: {
+    flexDirection: 'row',
+    padding: 20,
+    alignItems: 'center',
+  },
+  hvacPremiumMainPanel: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  hvacPremiumTempValue: {
+    fontSize: 48,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 229, 255, 0.6)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
+  },
+  hvacPremiumLabel: {
+    fontSize: 10,
+    color: '#00E5FF',
     fontWeight: 'bold',
-    letterSpacing: 0.5,
+    letterSpacing: 2,
+    marginTop: 4,
   },
-  hvacOccupancyInfo: {
+  hvacPremiumDetailsPanel: {
+    flex: 1.2,
+    paddingLeft: 20,
+    justifyContent: 'center',
+    gap: 12,
+  },
+  hvacPremiumDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  hvacPremiumDetailIcon: {
+    fontSize: 16,
+    width: 24,
+    textAlign: 'center',
+    marginRight: 8,
+  },
+  hvacPremiumDetailText: {
+    fontSize: 12,
+    color: '#E2E8F0',
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  hvacPremiumFooter: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  hvacPremiumOccupancyText: {
     fontSize: 11,
     color: '#94A3B8',
-    textAlign: 'center',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
+  },
+  hvacPremiumDispatchText: {
+    fontSize: 11,
+    color: '#00E676',
+    fontWeight: 'bold',
   },
 });
