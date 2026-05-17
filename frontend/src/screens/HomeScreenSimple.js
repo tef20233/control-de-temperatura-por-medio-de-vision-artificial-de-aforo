@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -33,6 +34,25 @@ export default function HomeScreenSimple() {
   const lastFrameId = useRef(null);
   const socketRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
+
+  // Pulse animation for offline video feed
+  const placeholderPulse = useRef(new Animated.Value(0.9)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(placeholderPulse, {
+          toValue: 1.15,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(placeholderPulse, {
+          toValue: 0.9,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -320,21 +340,39 @@ export default function HomeScreenSimple() {
           </View>
         ) : (
           <View style={[styles.videoPlaceholder, cameraActive && styles.videoPlaceholderActive]}>
-            <Text style={styles.videoIcon}>{cameraActive ? '📡' : '📸'}</Text>
+            <View style={styles.radarPlaceholderWrapper}>
+              <Animated.View 
+                style={[
+                  styles.radarPlaceholderRing, 
+                  { transform: [{ scale: placeholderPulse }] }
+                ]} 
+              />
+              <Animated.View 
+                style={[
+                  styles.radarPlaceholderRingInner, 
+                  { transform: [{ scale: placeholderPulse }] }
+                ]} 
+              />
+              <View style={styles.radarPlaceholderCenter}>
+                <Text style={styles.radarCenterIcon}>{cameraActive ? '📡' : '🛰️'}</Text>
+              </View>
+            </View>
             <Text style={styles.videoText}>
               {cameraActive ? 'Sincronizando flujo de video...' : 'Monitoreo Inactivo'}
             </Text>
-            {cameraActive && (
+            {cameraActive ? (
               <>
                 <ActivityIndicator 
-                  size="large" 
+                  size="small" 
                   color="#00E5FF" 
-                  style={{ marginTop: 15 }}
+                  style={{ marginTop: 10 }}
                 />
                 <Text style={styles.videoSubText}>
                   {wsConnected ? 'Canal WebSocket Abierto' : 'Estableciendo enlace de video...'}
                 </Text>
               </>
+            ) : (
+              <Text style={styles.videoSubText}>Presiona el botón de abajo para iniciar la transmisión IA</Text>
             )}
           </View>
         )}
@@ -868,5 +906,46 @@ const styles = StyleSheet.create({
     color: '#334155',
     letterSpacing: 2,
     textAlign: 'center',
+  },
+  radarPlaceholderWrapper: {
+    width: 120,
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  radarPlaceholderRing: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 229, 255, 0.15)',
+  },
+  radarPlaceholderRingInner: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 1.5,
+    borderColor: 'rgba(124, 77, 255, 0.25)',
+  },
+  radarPlaceholderCenter: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#0F172A',
+    borderWidth: 1.5,
+    borderColor: '#00E5FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#00E5FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  radarCenterIcon: {
+    fontSize: 20,
   },
 });
