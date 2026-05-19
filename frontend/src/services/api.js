@@ -221,6 +221,16 @@ export const apiService = {
       throw error;
     }
   },
+
+  updateHvacConfig: async (configData) => {
+    try {
+      const response = await api.post('/api/hvac/config', configData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating HVAC config:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;

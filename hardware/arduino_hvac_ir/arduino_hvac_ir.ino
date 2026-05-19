@@ -1,3 +1,5 @@
+#define IR_SEND_PIN 9
+
 #include <ArduinoJson.h>
 #include <IRremote.hpp>
 #include <ctype.h>
@@ -5,32 +7,31 @@
 // -----------------------------------------------------------------------------
 // Firmware Arduino HVAC IR
 // -----------------------------------------------------------------------------
-// Soporta 3 formas de comando por Serial, una por línea:
+// Soporta comandos por Serial, una línea JSON por comando:
 //
 // 1) HVAC compacto:
-// {"t":"hvac","id":"cmd-1","b":"lg","p":1,"m":"cool","temp":24,"f":"auto"}
+// {"t":"hvac","id":"cmd-1","b":"challenger","p":1,"m":"cool","temp":22,"f":"auto"}
 //
 // 2) HVAC verbose:
-// {"type":"hvac","command_id":"cmd-1","brand":"lg","power":true,"mode":"cool","temperature":24,"fan":"auto"}
+// {"type":"hvac","command_id":"cmd-1","brand":"challenger","power":true,"mode":"cool","temperature":22,"fan":"auto"}
 //
 // 3) RAW universal:
-// {"t":"raw","id":"cmd-2","b":"samsung","khz":38,"pulses":[9000,4500,560,560]}
+// {"t":"raw","id":"cmd-2","b":"challenger","khz":38,"r":2,"pulses":[9000,4500,560,560]}
 //
 // 4) Preset:
-// {"t":"preset","id":"cmd-3","b":"lg","preset_key":"cool_24_auto"}
+// {"t":"preset","id":"cmd-3","b":"challenger","preset_key":"cool_24_auto"}
 //
-// El firmware responde siempre con JSON:
+// Respuesta:
 // {"type":"ack","command_id":"...","success":true/false,"reason":"..."}
 // -----------------------------------------------------------------------------
 
 // Hardware
-static const uint8_t IR_SEND_PIN = 9;
 static const uint32_t SERIAL_BAUD = 115200;
 
 // Buffers
 static const size_t SERIAL_BUFFER_SIZE = 1024;
 static const size_t JSON_DOC_SIZE = 1536;
-static const size_t MAX_RAW_PULSES = 220;
+static const size_t MAX_RAW_PULSES = 245;
 
 // IR
 static const uint8_t DEFAULT_IR_KHZ = 38;
@@ -54,8 +55,9 @@ struct PresetPayload {
 // -----------------------------------------------------------------------------
 
 bool equalsIgnoreCase(const char *a, const char *b) {
-  if (!a || !b)
+  if (!a || !b) {
     return false;
+  }
 
   while (*a && *b) {
     if (tolower((unsigned char)*a) != tolower((unsigned char)*b)) {
@@ -71,13 +73,13 @@ bool equalsIgnoreCase(const char *a, const char *b) {
 
 const char *getStringOr(JsonDocument &doc, const char *shortKey,
                         const char *longKey, const char *fallback) {
-  const char *value = doc[shortKey].as<const char*>();
+  const char *value = doc[shortKey].as<const char *>();
 
   if (value && value[0] != '\0') {
     return value;
   }
 
-  value = doc[longKey].as<const char*>();
+  value = doc[longKey].as<const char *>();
 
   if (value && value[0] != '\0') {
     return value;
@@ -120,7 +122,8 @@ bool readPower(JsonDocument &doc, bool fallback) {
     return fallback;
   }
 
-  return equalsIgnoreCase(text, "on") || equalsIgnoreCase(text, "true") ||
+  return equalsIgnoreCase(text, "on") ||
+         equalsIgnoreCase(text, "true") ||
          equalsIgnoreCase(text, "1");
 }
 
@@ -189,16 +192,17 @@ void sendRawPulses(uint16_t pulseCount, uint8_t khz, uint8_t repeats) {
       delay(RAW_SEND_GAP_MS);
     }
   }
+
+
 }
 
 // -----------------------------------------------------------------------------
-// Presets programables por marca.
-// Reemplaza estas funciones con códigos RAW reales capturados de cada control.
+// Presets programables
 // -----------------------------------------------------------------------------
 
 PresetPayload resolveLgPreset(const char *presetKey) {
   /*
-    Ejemplo futuro:
+    Aquí puedes poner RAW reales capturados del control LG.
 
     static const uint16_t LG_COOL_24_AUTO[] PROGMEM = {
       9000, 4500, 560, 560
@@ -233,6 +237,30 @@ PresetPayload resolveGenericPreset(const char *presetKey) {
   return {nullptr, 0, DEFAULT_IR_KHZ, false};
 }
 
+PresetPayload resolveChallengerPreset(const char *presetKey) {
+  /*
+    Cuando captures RAW reales del control Challenger, los puedes poner aquí.
+
+    Ejemplo:
+
+    static const uint16_t CHALLENGER_COOL_22_AUTO[] PROGMEM = {
+      9000, 4500, 560, 560
+    };
+
+    if (equalsIgnoreCase(presetKey, "cool_22_auto")) {
+      return {
+        CHALLENGER_COOL_22_AUTO,
+        sizeof(CHALLENGER_COOL_22_AUTO) / sizeof(CHALLENGER_COOL_22_AUTO[0]),
+        38,
+        true
+      };
+    }
+  */
+
+  (void)presetKey;
+  return {nullptr, 0, DEFAULT_IR_KHZ, false};
+}
+
 PresetPayload resolvePreset(const char *brand, const char *presetKey,
                             bool &knownBrand) {
   knownBrand = true;
@@ -247,6 +275,10 @@ PresetPayload resolvePreset(const char *brand, const char *presetKey,
 
   if (equalsIgnoreCase(brand, "haier")) {
     return resolveHaierPreset(presetKey);
+  }
+
+  if (equalsIgnoreCase(brand, "challenger")) {
+    return resolveChallengerPreset(presetKey);
   }
 
   if (equalsIgnoreCase(brand, "generic")) {
@@ -278,24 +310,19 @@ bool copyPresetToRawBuffer(const PresetPayload &preset,
 }
 
 // -----------------------------------------------------------------------------
-// LG AC Protocol básico
-// -----------------------------------------------------------------------------
-// Nota: puede no funcionar en todos los modelos LG.
-// Para producción es más confiable usar RAW capturado o una librería AC
-// dedicada.
+// LG AC básico
 // -----------------------------------------------------------------------------
 
 void sendLgAc(bool power, const char *mode, int temp, const char *fan) {
   if (!power) {
-    // Código de apagado estándar LG.
     IrSender.sendLG(0x88, 0xC0051, 0);
+  
     return;
   }
 
   uint8_t op = 0x0;
   uint8_t m = 0;
 
-  // 0: cool, 1: dry, 2: fan, 4: heat
   if (equalsIgnoreCase(mode, "dry")) {
     m = 1;
   } else if (equalsIgnoreCase(mode, "fan")) {
@@ -310,10 +337,10 @@ void sendLgAc(bool power, const char *mode, int temp, const char *fan) {
 
   uint8_t f = 5;
 
-  // 0: low, 2: mid, 4: high, 5: auto/natural
   if (equalsIgnoreCase(fan, "low")) {
     f = 0;
-  } else if (equalsIgnoreCase(fan, "mid") || equalsIgnoreCase(fan, "medium")) {
+  } else if (equalsIgnoreCase(fan, "mid") ||
+             equalsIgnoreCase(fan, "medium")) {
     f = 2;
   } else if (equalsIgnoreCase(fan, "high")) {
     f = 4;
@@ -329,6 +356,152 @@ void sendLgAc(bool power, const char *mode, int temp, const char *fan) {
   uint32_t finalCode = 0x8800000 | (payload << 4) | checksum;
 
   IrSender.sendLG(0x88, (finalCode & 0xFFFFF), 0);
+
+}
+
+// -----------------------------------------------------------------------------
+// Challenger AC - Códigos RAW capturados del control original
+// Modo: Cool, Fan: Auto. Temperaturas: 18, 22, 24, 26, 30°C + OFF
+// -----------------------------------------------------------------------------
+
+static const uint16_t CHALLENGER_OFF[] PROGMEM = {
+  8850,4450,550,1700,500,1700,500,550,550,550,550,550,500,600,500,1700,500,1700,
+  550,1700,500,1700,500,1700,500,600,500,600,500,550,550,550,500,1700,
+  550,550,500,600,500,600,500,600,500,600,500,1700,500,1700,500,1700,
+  500,600,500,550,550,600,500,550,550,550,500,600,500,600,500,600,
+  500,600,500,550,550,550,500,600,500,600,500,1700,500,600,500,1700,
+  500,600,500,600,500,600,500,550,550,550,500,600,500,600,500,600,
+  500,600,500,550,550,550,500,600,500,600,500,1700,500,600,500,600,
+  500,600,500,550,550,550,500,600,500,600,500,600,500,550,550,550,
+  550,550,550,550,550,550,500,600,500,550,550,550,500,600,500,600,
+  500,600,500,600,500,550,500,600,500,600,500,600,500,600,500,550,
+  550,550,500,600,500,600,500,600,500,600,500,550,550,550,500,600,
+  500,1700,500,600,500,1700,500,600,500,600,500,600,500,600,500,550,
+  550,1700,500,1700,500,1700,500,1700,500,600,500,1700,500,1700,500,1750,500
+};
+static const uint16_t CHALLENGER_OFF_LEN = sizeof(CHALLENGER_OFF) / sizeof(CHALLENGER_OFF[0]);
+
+static const uint16_t CHALLENGER_COOL_18[] PROGMEM = {
+  8850,4450,500,1700,500,1700,500,600,500,600,500,600,500,550,500,1750,500,1700,
+  500,1700,500,1700,500,1700,500,600,500,1700,500,600,500,1700,500,600,
+  500,600,500,600,500,600,500,550,500,600,500,1700,550,1700,500,1700,
+  500,600,500,550,550,550,500,600,500,600,500,600,500,550,550,550,
+  500,600,500,600,500,600,500,600,500,550,550,1700,500,550,550,1700,
+  500,550,550,550,500,600,500,600,500,600,500,600,500,550,500,600,
+  500,600,500,600,500,600,500,550,550,550,500,1700,550,550,500,600,
+  500,600,500,600,500,600,500,550,550,550,500,600,500,600,500,600,
+  500,600,500,550,500,600,500,600,500,600,500,600,500,550,500,600,
+  500,600,500,600,500,600,500,600,500,550,550,1700,500,550,550,550,
+  500,600,500,600,500,600,500,550,550,550,500,600,500,600,500,600,
+  500,1700,500,600,500,600,500,550,500,600,500,600,500,600,500,600,
+  500,1700,500,1700,500,600,500,1700,500,1700,500,600,500,1700,500,1700,550
+};
+static const uint16_t CHALLENGER_COOL_18_LEN = sizeof(CHALLENGER_COOL_18) / sizeof(CHALLENGER_COOL_18[0]);
+
+static const uint16_t CHALLENGER_COOL_22[] PROGMEM = {
+  8850,4400,550,1700,500,1700,500,600,500,600,500,600,500,550,550,1700,500,1700,
+  500,1700,500,1700,500,1700,500,600,500,1700,550,1700,500,1700,500,600,
+  500,550,550,550,500,600,500,600,500,600,500,1700,500,1700,500,1700,
+  500,600,500,600,500,600,500,600,500,550,500,600,500,600,500,600,
+  500,600,500,550,550,550,500,600,500,600,500,1700,500,600,500,1700,
+  500,600,500,600,500,600,500,550,550,550,500,600,500,600,500,600,
+  500,600,500,550,550,550,500,600,500,600,500,1700,500,600,500,600,
+  500,550,550,550,500,600,500,600,500,600,500,600,500,550,550,550,
+  500,600,500,600,500,600,500,600,500,550,550,550,500,600,500,600,
+  500,600,500,550,550,550,500,600,500,600,500,1700,500,600,500,600,
+  500,600,500,550,550,550,500,600,500,600,500,600,500,600,500,550,
+  550,1700,500,550,550,550,500,600,500,600,500,600,500,550,550,550,
+  500,1700,550,1650,550,550,550,1650,550,1650,550,1700,500,1700,500,1700,550
+};
+static const uint16_t CHALLENGER_COOL_22_LEN = sizeof(CHALLENGER_COOL_22) / sizeof(CHALLENGER_COOL_22[0]);
+
+static const uint16_t CHALLENGER_COOL_24[] PROGMEM = {
+  8800,4450,550,1700,500,1700,500,600,500,550,550,550,500,600,500,1700,500,1700,
+  550,1700,500,1700,500,1700,500,1700,500,600,500,600,500,600,500,1700,
+  500,600,500,600,500,550,500,600,500,600,500,1700,500,1700,550,1700,
+  500,550,550,550,500,600,500,600,500,600,500,550,550,550,500,600,
+  500,600,500,600,500,600,500,550,550,550,500,1700,550,550,500,1700,
+  550,550,500,600,500,600,500,600,500,600,500,550,550,550,500,600,
+  500,600,500,600,500,600,500,550,500,600,500,1700,500,600,500,600,
+  500,600,500,600,500,550,550,550,500,600,500,600,500,600,500,600,
+  500,550,550,550,500,600,500,600,500,600,450,650,500,550,550,550,
+  500,600,500,600,500,600,500,550,550,550,500,1700,550,550,500,600,
+  500,600,500,600,500,600,500,550,500,600,500,600,500,600,500,600,
+  500,1700,500,600,500,1700,500,600,500,600,500,550,500,600,500,600,
+  500,1700,500,1700,550,1700,500,550,550,1700,500,550,550,550,500,600,500
+};
+static const uint16_t CHALLENGER_COOL_24_LEN = sizeof(CHALLENGER_COOL_24) / sizeof(CHALLENGER_COOL_24[0]);
+
+static const uint16_t CHALLENGER_COOL_26[] PROGMEM = {
+  8800,4500,500,1700,500,1700,500,600,500,600,500,550,550,550,500,1700,550,1700,
+  500,1700,500,1700,500,1700,500,600,500,1700,500,600,500,600,500,1700,
+  500,600,500,600,500,600,500,550,500,600,500,1700,500,1750,500,1700,
+  500,600,500,550,550,550,500,600,500,600,500,600,500,600,500,550,
+  500,600,500,600,500,600,500,600,500,550,550,1700,500,550,550,1700,
+  500,550,550,550,500,600,500,600,500,600,500,600,500,550,550,550,
+  500,600,500,600,500,600,500,600,500,550,550,1700,500,550,550,550,
+  500,600,500,600,500,600,500,550,550,550,500,600,500,600,500,600,
+  500,600,500,550,550,550,500,600,500,600,500,600,500,600,500,550,
+  550,550,500,600,500,600,500,600,500,600,500,1700,500,600,500,550,
+  500,600,500,600,500,600,500,600,500,600,500,550,500,600,500,600,
+  500,1700,500,600,500,600,450,650,450,600,550,550,550,550,500,600,
+  500,1700,500,1700,500,600,500,1700,500,1700,500,600,500,600,500,600,500
+};
+static const uint16_t CHALLENGER_COOL_26_LEN = sizeof(CHALLENGER_COOL_26) / sizeof(CHALLENGER_COOL_26[0]);
+
+static const uint16_t CHALLENGER_COOL_30[] PROGMEM = {
+  8850,4450,500,1750,500,1700,500,600,500,550,500,600,500,600,500,1700,500,1700,
+  550,1700,500,1700,500,1700,500,600,500,1700,500,1700,500,600,500,1700,
+  500,600,500,600,500,600,500,600,500,550,500,1750,500,1700,500,1700,
+  500,600,500,600,500,550,500,600,500,600,500,600,500,600,500,600,
+  500,550,500,600,500,600,500,600,500,600,500,1700,500,600,500,1700,
+  500,600,500,550,550,550,500,600,500,600,500,600,500,600,500,550,
+  550,550,500,600,500,600,500,600,500,600,500,1700,500,600,500,550,
+  550,550,500,600,500,600,500,600,500,600,500,550,500,600,500,600,
+  500,600,500,600,500,550,550,550,500,600,500,600,500,600,500,600,
+  500,550,550,550,500,600,500,600,500,600,500,1700,500,600,500,600,
+  500,550,550,550,500,600,500,600,500,600,500,600,500,550,500,600,
+  500,1700,500,600,500,600,500,600,500,600,500,600,500,550,500,600,
+  500,1700,500,1750,500,550,500,1750,500,1700,500,1700,500,600,500,600,500
+};
+static const uint16_t CHALLENGER_COOL_30_LEN = sizeof(CHALLENGER_COOL_30) / sizeof(CHALLENGER_COOL_30[0]);
+
+// Envía un array PROGMEM de pulsos RAW con doble transmisión
+void sendChallengerRaw(const uint16_t *progmemData, uint16_t len) {
+  // Copiar de PROGMEM a RAM
+  for (uint16_t i = 0; i < len && i < MAX_RAW_PULSES; i++) {
+    rawPulses[i] = pgm_read_word(&progmemData[i]);
+  }
+  // Doble envío (igual que tu código que funciona)
+  IrSender.sendRaw(rawPulses, len, 38);
+  delay(120);
+  IrSender.sendRaw(rawPulses, len, 38);
+}
+
+void sendChallengerAc(bool power, const char *mode, int temp, const char *fan) {
+  (void)mode; // Los códigos capturados son todos Cool Auto
+  (void)fan;
+
+  if (!power) {
+    sendChallengerRaw(CHALLENGER_OFF, CHALLENGER_OFF_LEN);
+    return;
+  }
+
+  // Mapear temperatura al código capturado más cercano
+  // 16-19 → 18°C, 20-22 → 22°C, 23-25 → 24°C, 26-28 → 26°C, 29-30 → 30°C
+  int t = constrain(temp, 16, 30);
+
+  if (t <= 19) {
+    sendChallengerRaw(CHALLENGER_COOL_18, CHALLENGER_COOL_18_LEN);
+  } else if (t <= 22) {
+    sendChallengerRaw(CHALLENGER_COOL_22, CHALLENGER_COOL_22_LEN);
+  } else if (t <= 25) {
+    sendChallengerRaw(CHALLENGER_COOL_24, CHALLENGER_COOL_24_LEN);
+  } else if (t <= 28) {
+    sendChallengerRaw(CHALLENGER_COOL_26, CHALLENGER_COOL_26_LEN);
+  } else {
+    sendChallengerRaw(CHALLENGER_COOL_30, CHALLENGER_COOL_30_LEN);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -340,7 +513,6 @@ void handleRawCommand(JsonDocument &doc) {
   const char *brand = getStringOr(doc, "b", "brand", "");
 
   uint8_t khz = (uint8_t)getIntOr(doc, "khz", "frequency_khz", DEFAULT_IR_KHZ);
-
   uint8_t repeats = readRepeats(doc);
 
   JsonArrayConst pulses = doc["pulses"].as<JsonArrayConst>();
@@ -409,8 +581,8 @@ void handleHvacCommand(JsonDocument &doc) {
   const char *transportFormat =
       getStringOr(doc, "fmt", "transport_format", "hvac");
 
-  // Permite que el backend mande type=hvac + transport_format=raw.
-  if (equalsIgnoreCase(transportFormat, "raw") || !doc["pulses"].isNull() ||
+  if (equalsIgnoreCase(transportFormat, "raw") ||
+      !doc["pulses"].isNull() ||
       !doc["raw"].isNull()) {
     handleRawCommand(doc);
     return;
@@ -444,6 +616,12 @@ void handleHvacCommand(JsonDocument &doc) {
     return;
   }
 
+  if (equalsIgnoreCase(brand, "challenger")) {
+    sendChallengerAc(power, mode, temp, fan);
+    sendAck(commandId, true, "challenger_sent", brand, "hvac");
+    return;
+  }
+
   if (equalsIgnoreCase(brand, "samsung")) {
     sendAck(commandId, false, "samsung_requires_raw_or_preset", brand, "hvac");
     return;
@@ -462,6 +640,10 @@ void handleHvacCommand(JsonDocument &doc) {
   sendAck(commandId, false, "unsupported_brand", brand, "hvac");
 }
 
+// -----------------------------------------------------------------------------
+// Serial
+// -----------------------------------------------------------------------------
+
 void processLine(const char *line) {
   StaticJsonDocument<JSON_DOC_SIZE> doc;
   DeserializationError error = deserializeJson(doc, line);
@@ -473,12 +655,31 @@ void processLine(const char *line) {
 
   const char *type = getStringOr(doc, "t", "type", "");
 
-  if (equalsIgnoreCase(type, "hvac")) {
+  if (!type || type[0] == '\0') {
+    type = doc["command"].as<const char *>();
+  }
+
+  if ((!type || type[0] == '\0') &&
+      (!doc["pulses"].isNull() || !doc["raw"].isNull())) {
+    handleRawCommand(doc);
+    return;
+  }
+
+  if ((!type || type[0] == '\0') &&
+      (!doc["brand"].isNull() || !doc["b"].isNull())) {
     handleHvacCommand(doc);
     return;
   }
 
-  if (equalsIgnoreCase(type, "raw")) {
+  if (equalsIgnoreCase(type, "hvac") ||
+      equalsIgnoreCase(type, "ac") ||
+      equalsIgnoreCase(type, "air_conditioner")) {
+    handleHvacCommand(doc);
+    return;
+  }
+
+  if (equalsIgnoreCase(type, "raw") ||
+      equalsIgnoreCase(type, "ir_raw")) {
     handleRawCommand(doc);
     return;
   }
@@ -520,15 +721,17 @@ void readSerialLines() {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Arduino setup/loop
+// -----------------------------------------------------------------------------
+
 void setup() {
   Serial.begin(SERIAL_BAUD);
   Serial.setTimeout(50);
 
-  IrSender.begin(IR_SEND_PIN, ENABLE_LED_FEEDBACK);
+  IrSender.begin(ENABLE_LED_FEEDBACK);
 
-  while (!Serial) {
-    ; // Solo relevante en placas con USB nativo.
-  }
+  delay(300);
 
   StaticJsonDocument<224> boot;
 
@@ -543,4 +746,6 @@ void setup() {
   Serial.println();
 }
 
-void loop() { readSerialLines(); }
+void loop() {
+  readSerialLines();
+}
