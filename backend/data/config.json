@@ -1,5 +1,5 @@
 {
-  "max_capacity": 50,
+  "max_capacity": 30,
   "ensemble_strategy": "best",
   "confidence_threshold": 0.45,
   "enable_privacy": false,
@@ -29,7 +29,7 @@
   "hvac": {
     "enabled": true,
     "control_mode": "auto",
-    "brand": "lg",
+    "brand": "challenger",
     "mode": "cool",
     "fan_speed": "auto",
     "temperature": {

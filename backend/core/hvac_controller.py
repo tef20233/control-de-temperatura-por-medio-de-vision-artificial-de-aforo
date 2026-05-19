@@ -18,6 +18,11 @@ SUPPORTED_HVAC_BRANDS = {
         "protocol_hint": "ac_haier",
         "model_required": False,
     },
+    "challenger": {
+        "display_name": "Challenger",
+        "protocol_hint": "ac_challenger",
+        "model_required": False,
+    },
     "generic": {
         "display_name": "Genérico",
         "protocol_hint": "ac_generic",
@@ -66,6 +71,7 @@ class OccupancyBasedHVACController:
         deadband_c = float(temp_cfg.get("deadband_c", 0.5))
         step_c = float(temp_cfg.get("step_c", 1.0))
         min_command_interval_s = float(temp_cfg.get("min_command_interval_s", 15.0))
+        curve_exponent = float(temp_cfg.get("curve_exponent", 0.5)) # Exponente para curva no lineal (sensibilidad)
 
         auto_power_off_when_empty = bool(self.hvac_config.get("auto_power_off_when_empty", True))
         enabled = bool(self.hvac_config.get("enabled", False))
@@ -77,6 +83,9 @@ class OccupancyBasedHVACController:
             0.0,
             min(1.0, occupancy_ratio * occupancy_weight + thermal_load_ratio * thermal_weight),
         )
+
+        # Aplicar curva no lineal para mayor sensibilidad/confort con aforos bajos
+        demand_ratio = demand_ratio ** curve_exponent
 
         if count <= 0:
             raw_target_temp = vacant_temp

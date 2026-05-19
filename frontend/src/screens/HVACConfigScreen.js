@@ -136,6 +136,16 @@ export default function HVACConfigScreen({ onBack }) {
     }
   };
 
+  const handleBrandChange = async (newBrand) => {
+    setManualCmd(prev => ({ ...prev, brand: newBrand }));
+    try {
+      await apiService.updateHvacConfig({ brand: newBrand });
+      loadStatus();
+    } catch (error) {
+      console.error('Error updating brand in backend config:', error);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -251,7 +261,7 @@ export default function HVACConfigScreen({ onBack }) {
               <View style={styles.pickerContainerSmall}>
                 <Picker
                   selectedValue={manualCmd.brand}
-                  onValueChange={(v) => setManualCmd({ ...manualCmd, brand: v })}
+                  onValueChange={handleBrandChange}
                   dropdownIconColor="#00E5FF"
                   style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }}
                 >
@@ -275,24 +285,7 @@ export default function HVACConfigScreen({ onBack }) {
 
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Modo Climatización</Text>
-              <View style={styles.pickerContainerSmall}>
-                <Picker
-                  selectedValue={manualCmd.mode}
-                  onValueChange={(v) => setManualCmd({ ...manualCmd, mode: v })}
-                  dropdownIconColor="#00E5FF"
-                  style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }}
-                >
-                  <Picker.Item label="Cool (Frío)" value="cool" style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
-                  <Picker.Item label="Heat (Calor)" value="heat" style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
-                  <Picker.Item label="Fan (Ventilación)" value="fan" style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
-                  <Picker.Item label="Dry (Secado)" value="dry" style={{ color: '#FFFFFF', backgroundColor: '#0F172A' }} />
-                </Picker>
-              </View>
-            </View>
-            
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.label}>Temp: <Text style={{ color: '#00E5FF' }}>{manualCmd.temp}°C</Text></Text>
+              <Text style={styles.label}>Temperatura Objetivo: <Text style={{ color: '#00E5FF' }}>{manualCmd.temp}°C</Text></Text>
               <View style={styles.tempButtons}>
                 <TouchableOpacity onPress={() => setManualCmd(p => ({ ...p, temp: Math.max(16, p.temp - 1) }))} style={styles.tempBtn}>
                   <Text style={styles.tempBtnText}>-</Text>

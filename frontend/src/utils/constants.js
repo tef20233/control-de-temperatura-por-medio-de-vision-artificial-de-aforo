@@ -2,15 +2,15 @@
 export const API_CONFIG = {
   // URLs de backend a intentar (orden de prioridad)
   BACKEND_URLS: [
-    'http://192.168.18.5:5000',      // IP ACTUAL (Detectada)
+    'http://192.168.1.8:5000',      // IP ACTUAL (Detectada)
     'http://10.0.2.2:5000',           // Android Emulator Host
     'http://localhost:5000',           // Localhost (misma máquina)
     'http://127.0.0.1:5000',          // IPv4 loopback
   ],
 
   // URL actual en uso (se establece dinámicamente)
-  BASE_URL: 'http://192.168.18.5:5000',
-  WS_URL: 'ws://192.168.18.5:5000',
+  BASE_URL: 'http://192.168.1.8:5000',
+  WS_URL: 'ws://192.168.1.8:5000',
 
   TIMEOUT: 10000, // 10 segundos (aumentado para conexiones más lentas)
   RETRY_INTERVAL: 3000, // Reintentar cada 3 segundos

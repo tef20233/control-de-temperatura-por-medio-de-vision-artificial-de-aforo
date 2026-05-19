@@ -1712,6 +1712,6 @@ if __name__ == '__main__':
     print("="*80)
     
     # Ejecutar con SocketIO (soporta WebSockets)
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
 
 # Trigger reload for Arduino
