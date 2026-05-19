@@ -23,6 +23,11 @@ SUPPORTED_HVAC_BRANDS = {
         "protocol_hint": "ac_challenger",
         "model_required": False,
     },
+    "midea": {
+        "display_name": "Midea",
+        "protocol_hint": "ac_midea",
+        "model_required": False,
+    },
     "generic": {
         "display_name": "Genérico",
         "protocol_hint": "ac_generic",
